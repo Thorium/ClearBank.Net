@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>netstandard2.1;net472</TargetFrameworks>
+    <PackageId>ClearBank.Net</PackageId>
+    <AssemblyName>ClearBank.Net</AssemblyName>
+    <Version>0.9.0</Version>
+    <Authors>Tuomas</Authors>
+    <Company>Fund Ourselves</Company>
+    <PackageTags>ClearBank .NET client clear bank integration payments online payment library transaction api bank uk</PackageTags>
+    <Description>
+        Unofficial .NET client for ClearBank integration, creating online payments via their API.
+    </Description>
+    <RepositoryUrl>https://github.com/Thorium/ClearBank.Net.git</RepositoryUrl> 
+    <RepositoryType>git</RepositoryType>    
+    <PackageLicenseExpression>Unlicense</PackageLicenseExpression>    
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="KeyVaultSigning" Version="1.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="SwaggerProvider" Version="0.10.7" />
+  </ItemGroup>
+</Project>
