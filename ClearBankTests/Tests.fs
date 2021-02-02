@@ -24,7 +24,7 @@ type TestClass () =
                         //,ExcludeAzureCliCredential = true
                         //,ExcludeInteractiveBrowserCredential = true
                     )) 
-        } : ClearbankConfigruation
+        } : ClearbankConfiguration
 
     let AssertTestResult actual =
         match actual with

@@ -2,13 +2,14 @@
 # ClearBank.NET
 
 Unofficial .NET client for ClearBank integration, creating online payments via their API.
+Bank payment handling automation in United Kingdom.
 This aims to be bare and easy.
 
 Here are the pre-conditions:
 
 ## 1. Create Azure KeyVault
 
-From the Access Policies, add the role, and "Key Permissions" for the Sign & Verify .
+From the Access Policies, add the role, and "Key Permissions" for the Sign & Verify.
 Azure KeyVault supports HSM (hardware security module) backed keys.
 
 ## 2. Configure the Certificate -tab
@@ -94,7 +95,7 @@ If you have problems with the KeyVault authentication, you can change the AzureK
                         //,ExcludeAzureCliCredential = true
                         //,ExcludeInteractiveBrowserCredential = true
                     )) 
-        } : ClearbankConfigruation
+        } : ClearbankConfiguration
 ```
 
 

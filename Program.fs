@@ -9,7 +9,7 @@ type KeyVaultCredentials =
 | DefaultCredentials
 | CredentialsWithOptions of Azure.Identity.DefaultAzureCredentialOptions
 
-type ClearbankConfigruation =
+type ClearbankConfiguration =
     { 
       BaseUrl: string
       PrivateKey: string
