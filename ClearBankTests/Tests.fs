@@ -67,3 +67,8 @@ type TestClass () =
         let actual = ClearBank.callClearbank clearbankDefaultConfig (Guid.NewGuid()) [| instructions |] |> Async.RunSynchronously
         AssertTestResult actual
 
+
+    [<TestMethod>]
+    member this.CreateAccountTest () =
+        let actual = ClearBank.createNewAccount clearbankDefaultConfig (Guid.NewGuid()) "04-06-98" "Test account" None |> Async.RunSynchronously
+        AssertTestResult actual

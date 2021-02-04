@@ -165,14 +165,41 @@ let createPaymentInstruction batchId account transfers =
             // ,"channelname", DateTime.UtcNow
         )
     req
-    
-let callClearbank config (requestId:Guid) paymnentInstructions =
+
+let createNewAccount config (requestId:Guid) sortCode accountName ownerName =
+    let req =
+        match ownerName with
+        | Some oname -> 
+            let owner = Models.Binding.Accounts.PartyIdentification(oname)
+            Models.Binding.Accounts.CreateAccountRequest(accountName, sortCode, owner)
+        | None -> Models.Binding.Accounts.CreateAccountRequest(accountName, sortCode.Replace("-", ""))
+    let requestIdS = requestId.ToString("N") //todo, unique, save to db
 
     let httpClient = new System.Net.Http.HttpClient(BaseAddress=new Uri(config.BaseUrl))
     let client = ClearBankSwaggerV2.Client httpClient
+
+    async {
+
+        let authToken = "Bearer " + config.PrivateKey
+        let toHash = client.Serialize req
+        let! signature_bodyhash_string = calculateSignature config toHash
+        
+        let! r = client.V2AccountsPost(authToken, signature_bodyhash_string, requestIdS, req) |> Async.Catch
+        httpClient.Dispose()
+        match r with
+        | Choice1Of2 x -> return Ok x
+        | Choice2Of2 err ->
+            let details = getErrorDetails err
+            return Error(err, details)
+    }
+
+let callClearbank config (requestId:Guid) paymnentInstructions =
+
     let req = Payments.CreateCreditTransferRequest(
                 paymentInstructions = paymnentInstructions)
     let requestIdS = requestId.ToString("N") //todo, unique, save to db
+    let httpClient = new System.Net.Http.HttpClient(BaseAddress=new Uri(config.BaseUrl))
+    let client = ClearBankSwaggerV2.Client httpClient
 
     async {
 

@@ -5,4 +5,5 @@ module Program =
         let t = ClearBankTests.TestClass()
         t.TestMethodPassingTest()
         t.ProcessPaymentsTest()
+        //t.CreateAccountTest()
         0
