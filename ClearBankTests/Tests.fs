@@ -72,3 +72,19 @@ type TestClass () =
     member this.CreateAccountTest () =
         let actual = ClearBank.createNewAccount clearbankDefaultConfig (Guid.NewGuid()) "04-06-98" "Test account" None |> Async.RunSynchronously
         AssertTestResult actual
+
+    [<TestMethod>]
+    member this.WebhookResponseTest () =
+        let test =
+            """{
+                "Type": "TransactionSettled",
+                "Version": 6,
+                "Payload": {},
+                "Nonce": 123456789012
+            }""" |> ClearBankWebhooks.parsePaymentsCall
+
+        Assert.AreEqual(123456789012L, test.Nonce)
+
+        let response = ClearBankWebhooks.createResponse test.Nonce
+        Assert.IsNotNull response
+
