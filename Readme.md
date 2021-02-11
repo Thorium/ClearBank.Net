@@ -58,6 +58,7 @@ let doSomeTransactions =
             Currency = "GBP"
             Description = "Phone Bill"
             PaymentReference = "123456789"
+            TransactionId = "12345" // You identify corresponding webhooks with this.
         } |> ClearBank.createCreditTransfer
 
     let target2 = 
@@ -68,6 +69,7 @@ let doSomeTransactions =
             Currency = "GBP"
             Description = "Some money"
             PaymentReference = "12345"
+            TransactionId = "12345"
         } |> ClearBank.createCreditTransfer
 
     let instructions = ClearBank.createPaymentInstruction "Batch123" fromAccount  [| target1 ; target2 |]

@@ -2,6 +2,13 @@ module ClearBankWebhooks
 
 let createResponse (nonce:int64) = """{"Nonce": """ + nonce.ToString() + "}"
 
+let verifySignature (config:ClearBank.ClearbankConfiguration) requestBody signature =
+    async {
+        ClearBank.setKeyVaultCredentials config.AzureKeyVaultCredentials
+        let! res = KeyVault.verifyAsync config.AzureKeyVaultName config.AzureKeyVaultCertificateName requestBody signature
+        return res.IsValid
+    }
+
 type ClearBankPaymentJson = FSharp.Data.JsonProvider<"""[
 {
     "Type": "TransactionSettled",

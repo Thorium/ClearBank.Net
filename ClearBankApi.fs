@@ -129,13 +129,14 @@ type PaymentTransfer = {
     Currency: string
     Description: string
     PaymentReference: string
+    TransactionId: string
 }
 
 let createCreditTransfer (payment:PaymentTransfer) =
     Payments.CreditTransfer(
         paymentIdentification = Payments.PaymentIdentification(
                                     payment.Description, // instructionIdentification
-                                    payment.PaymentReference // endToEndIdentification
+                                    payment.TransactionId // endToEndIdentification
                                 ),
 
         amount = Models.Amount(Convert.ToDouble payment.Sum, payment.Currency),
