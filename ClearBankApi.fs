@@ -14,7 +14,6 @@ type ClearbankConfiguration =
       BaseUrl: string
       PrivateKey: string
       AzureKeyVaultName: string
-      AzureKeyVaultCertificateName: string
       AzureKeyVaultCredentials: KeyVaultCredentials
     }
 
@@ -47,10 +46,10 @@ let setKeyVaultCredentials options =
         KeyVault.configureAzureCredentials <- fun() ->
             Azure.Identity.DefaultAzureCredential opts
 
-let calculateSignature config requestBody =
+let calculateSignature config azureKeyVaultCertificateName requestBody =
     async {
         setKeyVaultCredentials config.AzureKeyVaultCredentials
-        let! signature_bodyhash = KeyVault.signAsync config.AzureKeyVaultName config.AzureKeyVaultCertificateName requestBody
+        let! signature_bodyhash = KeyVault.signAsync config.AzureKeyVaultName azureKeyVaultCertificateName requestBody
         let signature_bodyhash_string = 
                 signature_bodyhash.Signature 
                 |> Convert.ToBase64String
@@ -68,7 +67,7 @@ let getErrorDetails : Exception -> string = function
     | _ ->
         ""
 
-let callTestEndpoint config =
+let callTestEndpoint config azureKeyVaultCertificateName =
 
     let httpClient = new System.Net.Http.HttpClient(BaseAddress=new Uri(config.BaseUrl))
     let client = ClearBankSwaggerV1.Client httpClient
@@ -78,7 +77,7 @@ let callTestEndpoint config =
         let payload = Newtonsoft.Json.Linq.JObject.Parse("""{"institutionId": "string","body": "hello world!"}""") |> box
         let payloaStr = Newtonsoft.Json.JsonConvert.SerializeObject payload
 
-        let! signature_bodyhash_string = calculateSignature config payloaStr
+        let! signature_bodyhash_string = calculateSignature config azureKeyVaultCertificateName payloaStr
         let requestId = Guid.NewGuid().ToString("N")
         let! r = client.V1TestPost(authToken, signature_bodyhash_string, requestId, payload) |> Async.Catch
         httpClient.Dispose()
@@ -167,7 +166,7 @@ let createPaymentInstruction batchId account transfers =
         )
     req
 
-let createNewAccount config (requestId:Guid) sortCode accountName ownerName =
+let createNewAccount config azureKeyVaultCertificateName (requestId:Guid) sortCode accountName ownerName =
     let req =
         match ownerName with
         | Some oname -> 
@@ -183,7 +182,7 @@ let createNewAccount config (requestId:Guid) sortCode accountName ownerName =
 
         let authToken = "Bearer " + config.PrivateKey
         let toHash = client.Serialize req
-        let! signature_bodyhash_string = calculateSignature config toHash
+        let! signature_bodyhash_string = calculateSignature config azureKeyVaultCertificateName toHash
         
         let! r = client.V2AccountsPost(authToken, signature_bodyhash_string, requestIdS, req) |> Async.Catch
         httpClient.Dispose()
@@ -194,7 +193,7 @@ let createNewAccount config (requestId:Guid) sortCode accountName ownerName =
             return Error(err, details)
     }
 
-let callClearbank config (requestId:Guid) paymnentInstructions =
+let transferPayments config azureKeyVaultCertificateName (requestId:Guid) paymnentInstructions =
 
     let req = Payments.CreateCreditTransferRequest(
                 paymentInstructions = paymnentInstructions)
@@ -207,7 +206,7 @@ let callClearbank config (requestId:Guid) paymnentInstructions =
         let authToken = "Bearer " + config.PrivateKey
         let scheme = "FPS" // "Bacs"
         let toHash = client.Serialize req
-        let! signature_bodyhash_string = calculateSignature config toHash
+        let! signature_bodyhash_string = calculateSignature config azureKeyVaultCertificateName toHash
             
         let! r = client.V2PaymentsBySchemePost(scheme, authToken, signature_bodyhash_string, requestIdS, req) |> Async.Catch
         httpClient.Dispose()

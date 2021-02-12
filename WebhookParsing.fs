@@ -1,11 +1,11 @@
 module ClearBankWebhooks
 
-let createResponse (nonce:int64) = """{"Nonce": """ + nonce.ToString() + "}"
+let createResponse (nonce:int64) = """{"Nonce":""" + nonce.ToString() + "}"
 
-let verifySignature (config:ClearBank.ClearbankConfiguration) requestBody signature =
+let verifySignature (config:ClearBank.ClearbankConfiguration) azureKeyVaultCertificateName requestBody signature =
     async {
         ClearBank.setKeyVaultCredentials config.AzureKeyVaultCredentials
-        let! res = KeyVault.verifyAsync config.AzureKeyVaultName config.AzureKeyVaultCertificateName requestBody signature
+        let! res = KeyVault.verifyAsync config.AzureKeyVaultName azureKeyVaultCertificateName requestBody signature
         return res.IsValid
     }
 

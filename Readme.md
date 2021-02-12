@@ -44,26 +44,26 @@ let doSomeTransactions =
             BaseUrl = "https://institution-api-sim.clearbank.co.uk/"
             PrivateKey = "..."
             AzureKeyVaultName =  "myVault"
-            AzureKeyVaultCertificateName = "my-cert"
             AzureKeyVaultCredentials = DefaultCredentials
         } : ClearbankConfigruation
 
+    let azureKeyVaultCertificateName = "my-cert"
     let fromAccount = UK_Domestic("60-01-34", "51112345")
 
     let target1 = 
         {
-            To = UK_Domestic("60-01-35", "51112346")
+            To = UK_Domestic("20-20-15", "55555555")
             AccountHolder = "Mr Test"
             Sum = 123.00m
             Currency = "GBP"
             Description = "Phone Bill"
             PaymentReference = "123456789"
-            TransactionId = "12345" // You identify corresponding webhooks with this.
+            TransactionId = "12345" // End-to-end: You identify corresponding webhooks with this.
         } |> ClearBank.createCreditTransfer
 
     let target2 = 
         {
-            To = UK_Domestic("60-01-36", "51112347")
+            To = UK_Domestic("40-47-84", "70872490")
             AccountHolder = "John Doe"
             Sum = 123.00m
             Currency = "GBP"
@@ -72,8 +72,9 @@ let doSomeTransactions =
             TransactionId = "12345"
         } |> ClearBank.createCreditTransfer
 
+    let xReqId = Guid.NewGuid()
     let instructions = ClearBank.createPaymentInstruction "Batch123" fromAccount  [| target1 ; target2 |]
-    ClearBank.callClearbank clearbankDefaultConfig (Guid.NewGuid()) [| instructions |] |> Async.RunSynchronously
+    ClearBank.transferPayments clearbankDefaultConfig azureKeyVaultCertificateName xReqId [| instructions |] |> Async.RunSynchronously
 
 ```
 
