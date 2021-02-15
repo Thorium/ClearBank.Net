@@ -1,13 +1,13 @@
 module ClearBankWebhooks
+open System
 
-let createResponse (nonce:int64) = """{"Nonce":""" + nonce.ToString() + "}"
+[<Sealed>]
+type WebHookResponse (nonce:int64) =
+    member val Nonce = nonce |> Convert.ToInt32
 
-let verifySignature (config:ClearBank.ClearbankConfiguration) azureKeyVaultCertificateName requestBody signature =
-    async {
-        ClearBank.setKeyVaultCredentials config.AzureKeyVaultCredentials
-        let! res = KeyVault.verifyAsync config.AzureKeyVaultName azureKeyVaultCertificateName requestBody signature
-        return res.IsValid
-    }
+let createResponse (nonce:int64) =
+    let serializerSettings = Newtonsoft.Json.JsonSerializerSettings(MissingMemberHandling = Newtonsoft.Json.MissingMemberHandling.Error)
+    Newtonsoft.Json.JsonConvert.SerializeObject(WebHookResponse nonce, serializerSettings)
 
 type ClearBankPaymentJson = FSharp.Data.JsonProvider<"""[
 {
