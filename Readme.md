@@ -98,8 +98,61 @@ If you have problems with the KeyVault authentication, you can change the AzureK
                         //,ExcludeAzureCliCredential = true
                         //,ExcludeInteractiveBrowserCredential = true
                     )) 
+            LogUnsuccessfulHandler = None
         } : ClearbankConfiguration
 ```
 
+The last `LogUnsuccessfulHandler` property is optional error-logging callback. You could replace it e.g. with `Some logging` and have a function:
 
+```fsharp
+    let logging(status,content) =
+        match ClearBank.parseClarBankErrorContent content with
+        | ClearBankEmptyResponse -> Console.WriteLine "Response was empty"
+        | ClearBankTransactionError errors -> errors |> Seq.iter(fun (tid,err) -> Console.WriteLine("Transaction id " + tid + " failed for " + err))
+        | ClearBankGeneralError(title, detail) -> Console.WriteLine(title + ", " + detail)
+        | ClearBankUnknownError content -> Console.WriteLine("JSON: " + content)
+```
 
+### Creating accounts
+
+There is a method `ClearBank.createNewAccount` to create new accounts.
+
+### Webhook responses
+
+For receiving webhooks you have to get a web-server which is out of scope of this library,
+however there are some helper classes provided in this library.
+
+To use those, your server code could look something like this:
+
+```fsharp
+type CBWebhookController() as this =
+    inherit ApiController()
+
+    member __.Post ()
+        async {
+            // 1. get public signature from headers "DigitalSignature" and verify it.
+            // You can get the key from ClearBank portal, and 
+            // depending on your .NET version, there are some classes under System.Security.Cryptography
+            
+            // 2. Parse and handle the request:
+            let! bodyJson = this.Request.Content.ReadAsStringAsync() |> Async.AwaitTask            
+            let parsed = ClearBankWebhooks.parsePaymentsCall bodyJson
+
+            // Use parsed.Type to get the webhook type.
+            // Different types may have the corresponding end-to-end transactionId in different places.
+            // Fetch your transaction based on that id, and do whatever you want.
+
+            //    match parsed.Type with
+            //    | "TransactionSettled" -> ...
+            //    | "PaymentMessageAssessmentFailed" -> ...
+            //    | "PaymentMessageValidationFailed" -> ...
+            //    | "TransactionRejected" -> ...
+            //    | _ -> (* "FITestEvent" *) ...
+
+            // 3. Create response
+            return! ClearBankWebhooks.createResponse clearbankDefaultConfig azureKeyVaultCertificateName this.Request parsed.Nonce
+
+        } |> Async.StartAsTask
+```
+
+To test webhooks you can use e.g. Fiddler to compose them, and https://webhook.site/ to get the their calls.

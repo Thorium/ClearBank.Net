@@ -5,9 +5,28 @@ open System
 type WebHookResponse (nonce:int64) =
     member val Nonce = nonce |> Convert.ToInt32
 
-let createResponse (nonce:int64) =
+/// Creates a plain text response
+let createResponsePlain (nonce:int64) =
     let serializerSettings = Newtonsoft.Json.JsonSerializerSettings(MissingMemberHandling = Newtonsoft.Json.MissingMemberHandling.Error)
     Newtonsoft.Json.JsonConvert.SerializeObject(WebHookResponse nonce, serializerSettings)
+
+/// Creates a valid response that will not escape JSON object strings
+let createResponse config azureKeyVaultCertificateName (request:System.Net.Http.HttpRequestMessage) nonce =
+    async {
+        let responseContent = nonce |> createResponsePlain
+
+        let! signature = ClearBank.calculateSignature config azureKeyVaultCertificateName responseContent
+
+        // The purpose of StringContent over CreateResponse() is to avoid string escaping.
+        let response =
+            new System.Net.Http.HttpResponseMessage(
+                System.Net.HttpStatusCode.OK,
+                RequestMessage = request,
+                Content = new System.Net.Http.StringContent(responseContent, System.Text.Encoding.UTF8, "application/json"))
+
+        response.Headers.Add("DigitalSignature", signature)
+        return response
+    }
 
 type ClearBankPaymentJson = FSharp.Data.JsonProvider<"""[
 {
@@ -181,6 +200,7 @@ type ClearBankPaymentJson = FSharp.Data.JsonProvider<"""[
     "Nonce": 748392098
 }
 ]""", SampleIsList=true>
+
 type ClearBankPayment = ClearBankPaymentJson.Root
 
 let parsePaymentsCall (webhookInput:string) : ClearBankPayment =

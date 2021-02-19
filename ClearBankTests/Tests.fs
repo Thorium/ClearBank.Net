@@ -7,6 +7,13 @@ open Microsoft.VisualStudio.TestTools.UnitTesting
 [<TestClass>]
 type TestClass () =
 
+    let logging(status,content) =
+        match parseClarBankErrorContent content with
+        | ClearBankEmptyResponse -> Console.WriteLine "Response was empty"
+        | ClearBankTransactionError errors -> errors |> Seq.iter(fun (tid,err) -> Console.WriteLine("Transaction id " + tid + " failed for " + err))
+        | ClearBankGeneralError(title, detail) -> Console.WriteLine(title + ", " + detail)
+        | ClearBankUnknownError content -> Console.WriteLine("JSON: " + content)
+
     let clearbankDefaultConfig =
         {
             BaseUrl = "https://institution-api-sim.clearbank.co.uk/"
@@ -22,7 +29,8 @@ type TestClass () =
                         //,ExcludeVisualStudioCodeCredential = true
                         //,ExcludeAzureCliCredential = true
                         //,ExcludeInteractiveBrowserCredential = true
-                    )) 
+                    ))
+            LogUnsuccessfulHandler = Some logging
         } : ClearbankConfiguration
 
     let azureKeyVaultCertificateName = "myCert"
@@ -83,11 +91,13 @@ type TestClass () =
                 "Type": "TransactionSettled",
                 "Version": 6,
                 "Payload": {},
-                "Nonce": 123456789012
+                "Nonce": 123456789
             }""" |> ClearBankWebhooks.parsePaymentsCall
 
-        Assert.AreEqual(123456789012L, test.Nonce)
+        Assert.AreEqual(123456789L, test.Nonce)
 
-        let response = ClearBankWebhooks.createResponse test.Nonce
+        let thisRequest = new System.Net.Http.HttpRequestMessage()
+        let response = ClearBankWebhooks.createResponse clearbankDefaultConfig azureKeyVaultCertificateName thisRequest test.Nonce |> Async.RunSynchronously
+
         Assert.IsNotNull response
 

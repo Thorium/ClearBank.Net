@@ -15,6 +15,7 @@ type ClearbankConfiguration =
       PrivateKey: string
       AzureKeyVaultName: string
       AzureKeyVaultCredentials: KeyVaultCredentials
+      LogUnsuccessfulHandler: Option<HttpStatusCode*string -> Unit>
     }
 
 type BankAccount =
@@ -36,6 +37,83 @@ let [<Literal>]schemaV2 = __SOURCE_DIRECTORY__ + @"/clearbank-api-v2.json"
 type ClearBankSwaggerV1 = SwaggerClientProvider<schemaV1, PreferAsync=true>
 type ClearBankSwaggerV2 = SwaggerClientProvider<schemaV2, PreferAsync=true>
 
+
+let unSuccessStatusCode = new Event<_>() // id, status, content
+type ErrorHandler(messageHandler) =
+    inherit DelegatingHandler(messageHandler)
+    override __.SendAsync(request, cancellationToken) =
+        let resp = base.SendAsync(request, cancellationToken)
+        async {
+            let! result = resp |> Async.AwaitTask
+            if not result.IsSuccessStatusCode then
+                let! cont = result.Content.ReadAsStringAsync() |> Async.AwaitTask
+                let hasId, idvals = request.Headers.TryGetValues("X-Request-ID") // Some unique id
+                unSuccessStatusCode.Trigger(
+                    (if not hasId then None else idvals |> Seq.tryHead),
+                    result.StatusCode,
+                    cont)
+            return result
+        } |> Async.StartAsTask
+
+let reportUnsuccessfulEvents xRequestId handler =
+    let evt = 
+        unSuccessStatusCode.Publish
+        |> Event.filter(fun (id,status,content) -> id = Some xRequestId)
+        |> Event.map(fun (id,status,content) -> status, content)
+    evt.Subscribe(fun (s,c) -> handler(s,c))
+
+/// Errors
+/// Possible response values:
+/// Accepted, AccountDisabled, InsufficientFunds, InvalidAccount
+/// InvalidCurrency, Rejected, DebitPaymentDisabled
+type ClearBankErrorJson = FSharp.Data.JsonProvider<"""[{
+    "transactions": [{
+        "endToEndIdentification": "string",
+        "response": "Accepted"
+    }],
+    "halLinks": [{
+        "name": "string",
+        "href": "string",
+        "templated": true
+    }]
+},{
+    "errors": {},
+    "type": "string",
+    "title": "string",
+    "status": 3,
+    "detail": "string",
+    "instance": "string"
+}
+]""", SampleIsList=true>
+
+type ClearBankErrorResponse = ClearBankErrorJson.Root
+
+type ClearBankErrorStyle =
+| ClearBankEmptyResponse
+| ClearBankTransactionError of Errors: (string * string) seq //id and reason
+| ClearBankGeneralError of Title: string * Detail: string
+| ClearBankUnknownError of Content: string
+
+let parseClarBankErrorContent(content:string) =
+    if String.IsNullOrEmpty content then
+        ClearBankEmptyResponse
+    else
+
+    try
+        let parsed = 
+            ClearBankErrorJson.Parse content
+        match parsed.Transactions |> Seq.tryHead with
+        | Some t -> parsed.Transactions |> Seq.map(fun t -> t.EndToEndIdentification, t.Response) |> ClearBankTransactionError
+        | _ ->
+            if parsed.Title.IsSome && parsed.Detail.IsSome && (not (String.IsNullOrEmpty parsed.Title.Value)) then
+                (parsed.Title.Value, parsed.Detail.Value) |> ClearBankGeneralError
+            else
+                content |> ClearBankUnknownError
+    with
+    | _ -> content |> ClearBankUnknownError
+
+
+
 type Models = ClearBankSwaggerV2.ClearBank.FI.API.Versions.V2.Models
 type Payments = Models.Binding.Payments
 
@@ -56,6 +134,7 @@ let calculateSignature config azureKeyVaultCertificateName requestBody =
         return signature_bodyhash_string
     }
 
+
 let getErrorDetails : Exception -> string = function
     | :? WebException as wex when wex.Response <> null ->
         use stream = wex.Response.GetResponseStream()
@@ -69,7 +148,13 @@ let getErrorDetails : Exception -> string = function
 
 let callTestEndpoint config azureKeyVaultCertificateName =
 
-    let httpClient = new System.Net.Http.HttpClient(BaseAddress=new Uri(config.BaseUrl))
+    let httpClient =
+        if config.LogUnsuccessfulHandler.IsNone then
+            new System.Net.Http.HttpClient(BaseAddress=new Uri(config.BaseUrl))
+        else
+            let handler1 = new HttpClientHandler (UseCookies = false)
+            let handler2 = new ErrorHandler(handler1)
+            new System.Net.Http.HttpClient(handler2, BaseAddress=new Uri(config.BaseUrl))
     let client = ClearBankSwaggerV1.Client httpClient
     async {
 
@@ -79,8 +164,15 @@ let callTestEndpoint config azureKeyVaultCertificateName =
 
         let! signature_bodyhash_string = calculateSignature config azureKeyVaultCertificateName payloaStr
         let requestId = Guid.NewGuid().ToString("N")
+
+        let subscription = 
+            if config.LogUnsuccessfulHandler.IsSome then
+                Some (reportUnsuccessfulEvents requestId config.LogUnsuccessfulHandler.Value)
+            else None
         let! r = client.V1TestPost(authToken, signature_bodyhash_string, requestId, payload) |> Async.Catch
         httpClient.Dispose()
+        if subscription.IsSome then
+            subscription.Value.Dispose()
         match r with
         | Choice1Of2 x -> return Ok x
         | Choice2Of2 err ->
@@ -175,7 +267,13 @@ let createNewAccount config azureKeyVaultCertificateName (requestId:Guid) sortCo
         | None -> Models.Binding.Accounts.CreateAccountRequest(accountName, sortCode.Replace("-", ""))
     let requestIdS = requestId.ToString("N") //todo, unique, save to db
 
-    let httpClient = new System.Net.Http.HttpClient(BaseAddress=new Uri(config.BaseUrl))
+    let httpClient =
+        if config.LogUnsuccessfulHandler.IsNone then
+            new System.Net.Http.HttpClient(BaseAddress=new Uri(config.BaseUrl))
+        else
+            let handler1 = new HttpClientHandler (UseCookies = false)
+            let handler2 = new ErrorHandler(handler1)
+            new System.Net.Http.HttpClient(handler2, BaseAddress=new Uri(config.BaseUrl))
     let client = ClearBankSwaggerV2.Client httpClient
 
     async {
@@ -183,9 +281,15 @@ let createNewAccount config azureKeyVaultCertificateName (requestId:Guid) sortCo
         let authToken = "Bearer " + config.PrivateKey
         let toHash = client.Serialize req
         let! signature_bodyhash_string = calculateSignature config azureKeyVaultCertificateName toHash
-        
+
+        let subscription = 
+            if config.LogUnsuccessfulHandler.IsSome then
+                Some (reportUnsuccessfulEvents requestIdS config.LogUnsuccessfulHandler.Value)
+            else None
         let! r = client.V2AccountsPost(authToken, signature_bodyhash_string, requestIdS, req) |> Async.Catch
         httpClient.Dispose()
+        if subscription.IsSome then
+            subscription.Value.Dispose()
         match r with
         | Choice1Of2 x -> return Ok x
         | Choice2Of2 err ->
@@ -198,7 +302,14 @@ let transferPayments config azureKeyVaultCertificateName (requestId:Guid) paymne
     let req = Payments.CreateCreditTransferRequest(
                 paymentInstructions = paymnentInstructions)
     let requestIdS = requestId.ToString("N") //todo, unique, save to db
-    let httpClient = new System.Net.Http.HttpClient(BaseAddress=new Uri(config.BaseUrl))
+    let httpClient =
+        if config.LogUnsuccessfulHandler.IsNone then
+            new System.Net.Http.HttpClient(BaseAddress=new Uri(config.BaseUrl))
+        else
+            let handler1 = new HttpClientHandler (UseCookies = false)
+            let handler2 = new ErrorHandler(handler1)
+            new System.Net.Http.HttpClient(handler2, BaseAddress=new Uri(config.BaseUrl))
+
     let client = ClearBankSwaggerV2.Client httpClient
 
     async {
@@ -208,8 +319,14 @@ let transferPayments config azureKeyVaultCertificateName (requestId:Guid) paymne
         let toHash = client.Serialize req
         let! signature_bodyhash_string = calculateSignature config azureKeyVaultCertificateName toHash
             
+        let subscription = 
+            if config.LogUnsuccessfulHandler.IsSome then
+                Some (reportUnsuccessfulEvents requestIdS config.LogUnsuccessfulHandler.Value)
+            else None
         let! r = client.V2PaymentsBySchemePost(scheme, authToken, signature_bodyhash_string, requestIdS, req) |> Async.Catch
         httpClient.Dispose()
+        if subscription.IsSome then
+            subscription.Value.Dispose()
         match r with
         | Choice1Of2 x -> return Ok x
         | Choice2Of2 err ->
