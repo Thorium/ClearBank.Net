@@ -6,5 +6,6 @@ module Program =
         t.TestMethodPassingTest()
         t.ProcessPaymentsTest()
         //t.CreateAccountTest()
+        t.GetAccountsTest()
         t.WebhookResponseTest()
         0

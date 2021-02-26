@@ -297,6 +297,28 @@ let createNewAccount config azureKeyVaultCertificateName (requestId:Guid) sortCo
             return Error(err, details)
     }
 
+let getAccounts config =
+
+    let httpClient =
+        if config.LogUnsuccessfulHandler.IsNone then
+            new System.Net.Http.HttpClient(BaseAddress=new Uri(config.BaseUrl))
+        else
+            let handler1 = new HttpClientHandler (UseCookies = false)
+            let handler2 = new ErrorHandler(handler1)
+            new System.Net.Http.HttpClient(handler2, BaseAddress=new Uri(config.BaseUrl))
+    let client = ClearBankSwaggerV2.Client httpClient
+
+    async {
+        let authToken = "Bearer " + config.PrivateKey
+        let! r = client.V2AccountsGet(authToken) |> Async.Catch
+        httpClient.Dispose()
+        match r with
+        | Choice1Of2 x -> return Ok x
+        | Choice2Of2 err ->
+            let details = getErrorDetails err
+            return Error(err, details)
+    }
+
 let transferPayments config azureKeyVaultCertificateName (requestId:Guid) paymnentInstructions =
 
     let req = Payments.CreateCreditTransferRequest(

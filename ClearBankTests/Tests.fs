@@ -85,6 +85,25 @@ type TestClass () =
         AssertTestResult actual
 
     [<TestMethod>]
+    member this.GetAccountsTest () =
+        let actual = ClearBank.getAccounts clearbankDefaultConfig |> Async.RunSynchronously
+        match actual with
+        | Ok x ->
+            let accountBalances =
+                x.Accounts
+                |> Array.collect (fun a ->
+                    a.Balances |> Array.map(fun b ->
+                        (if a.Name = b.Name then a.Name else a.Name + " - " + b.Name) + ": " +
+                        b.Amount.ToString("F") + " " + b.Currency))
+
+            Assert.AreNotEqual(0, accountBalances.Length)
+            Assert.AreNotEqual("",accountBalances.[0])
+            Assert.AreNotEqual("",String.Join("\r\n", accountBalances))
+ 
+        | Error (err:Exception,details) ->
+            Assert.Fail(err.Message + ", " + details)
+
+    [<TestMethod>]
     member this.WebhookResponseTest () =
         let test =
             """{
