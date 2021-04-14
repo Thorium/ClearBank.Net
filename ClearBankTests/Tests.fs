@@ -105,15 +105,15 @@ type TestClass () =
 
     [<TestMethod>]
     member this.GetTransactionsTest () =
-        let actual = ClearBank.getTransactions clearbankDefaultConfig |> Async.RunSynchronously
+        let actual = ClearBank.getTransactions clearbankDefaultConfig (Some 1000) None None None |> Async.RunSynchronously
         match actual with
         | Ok x ->
             let transactions =
                 x.Transactions
                 |> Array.map (fun t ->
-                    t.EndToEndIdentifier + ": " + t.UltimateRemitterAccount.Id + " - " + t.UltimateBeneficiaryAccount.Id + ", " +
-                        t.Amount.InstructedAmount.ToString("F") + " " + t.Amount.Currency)
-
+                     t.TransactionTime.ToString("Z") + " " + t.EndToEndIdentifier + ": " +
+                     t.CounterpartAccount.Identification.SortCode  + " " + t.CounterpartAccount.Identification.AccountNumber  + " " +
+                        t.Amount.InstructedAmount.ToString("F") + " " + t.Amount.Currency + ", " + t.TransactionReference)
             printfn "%s" (String.Join("\r\n", transactions))
             Assert.AreNotEqual(0, transactions.Length)
             Assert.AreNotEqual("",String.Join("\r\n", transactions))

@@ -319,7 +319,7 @@ let getAccounts config =
             return Error(err, details)
     }
 
-let getTransactions config =
+let getTransactions config pageSize pageNumber startDate endDate =
 
     let httpClient =
         if config.LogUnsuccessfulHandler.IsNone then
@@ -332,7 +332,7 @@ let getTransactions config =
 
     async {
         let authToken = "Bearer " + config.PrivateKey
-        let! r = client.V2TransactionsGet(authToken) |> Async.Catch
+        let! r = client.V2TransactionsGet(authToken, pageNumber, pageSize, startDate, endDate) |> Async.Catch
         httpClient.Dispose()
         match r with
         | Choice1Of2 x -> return Ok x
@@ -340,7 +340,6 @@ let getTransactions config =
             let details = getErrorDetails err
             return Error(err, details)
     }
-
 
 let transferPayments config azureKeyVaultCertificateName (requestId:Guid) paymnentInstructions =
 
