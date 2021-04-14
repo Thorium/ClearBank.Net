@@ -111,12 +111,12 @@ type TestClass () =
             let transactions =
                 x.Transactions
                 |> Array.map (fun t ->
-                     t.TransactionTime.ToString("Z") + " " + t.EndToEndIdentifier + ": " +
+                     t.TransactionTime.ToString() + " " + t.EndToEndIdentifier + ": " +
                      t.CounterpartAccount.Identification.SortCode  + " " + t.CounterpartAccount.Identification.AccountNumber  + " " +
                         t.Amount.InstructedAmount.ToString("F") + " " + t.Amount.Currency + ", " + t.TransactionReference)
-            printfn "%s" (String.Join("\r\n", transactions))
+            let str = String.Join("\r\n", transactions)
             Assert.AreNotEqual(0, transactions.Length)
-            Assert.AreNotEqual("",String.Join("\r\n", transactions))
+            Assert.AreNotEqual("",str)
  
         | Error (err:Exception,details) ->
             Assert.Fail(err.Message + ", " + details)

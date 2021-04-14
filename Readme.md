@@ -117,6 +117,11 @@ The last `LogUnsuccessfulHandler` property is optional error-logging callback. Y
 
 There is a method `ClearBank.createNewAccount` to create new accounts.
 
+### Getting accounts and transactions
+
+There are methods `ClearBank.getAccounts`, that you can use for e.g. getting balances, 
+and `ClearBank.getTransactions` config pageSize pageNumber startDate endDate
+
 ### Webhook responses
 
 For receiving webhooks you have to get a web-server which is out of scope of this library,

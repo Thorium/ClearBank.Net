@@ -5,7 +5,7 @@
     <TargetFrameworks>netstandard2.1;net472</TargetFrameworks>
     <PackageId>ClearBank.Net</PackageId>
     <AssemblyName>ClearBank.Net</AssemblyName>
-    <Version>1.0.7</Version>
+    <Version>1.0.8</Version>
     <Authors>Tuomas</Authors>
     <Company>Fund Ourselves</Company>
     <PackageTags>ClearBank .NET client clear bank integration payments online payment library transaction api bank uk automation england united-kingdom great-britain hsm banking gateway clearbank</PackageTags>
