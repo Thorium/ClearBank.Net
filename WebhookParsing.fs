@@ -48,7 +48,7 @@ type ClearBankPaymentJson = FSharp.Data.JsonProvider<"""[
         "TimestampCreated": "2019-01-01T11:12:05.101Z",
         "CurrencyCode": "GBP",
         "DebitCreditCode": "Credit",
-        "Reference": "51dcf7ba480e61c5a60bbb6c6b774d17",
+        "Reference": "51dcf7ba480e61c5a60bbb6c6b774d17string",
         "IsReturn": false,
         "Account": {
             "IBAN": "GB00CUBK11223312345678",
