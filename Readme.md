@@ -2,7 +2,7 @@
 # ClearBank.NET
 
 Unofficial .NET client for ClearBank integration, creating online payments via their API.
-Bank payment handling automation in United Kingdom.
+Bank payment handling automation in United Kingdom. Released as a [NuGet package](https://www.nuget.org/packages/ClearBank.Net/).
 This aims to be bare and easy.
 
 Here are the pre-conditions:
