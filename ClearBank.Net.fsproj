@@ -22,9 +22,9 @@
     <Compile Include="WebhookParsing.fs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="FSharp.Data" Version="3.3.3" />
+    <PackageReference Include="FSharp.Data" Version="4.2.4" />
     <PackageReference Include="KeyVaultSigning" Version="1.0.2" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="SwaggerProvider" Version="0.10.7" />
+    <PackageReference Include="SwaggerProvider" Version="0.12" />
   </ItemGroup>
 </Project>
