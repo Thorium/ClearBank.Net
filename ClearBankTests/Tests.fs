@@ -8,7 +8,7 @@ open Microsoft.VisualStudio.TestTools.UnitTesting
 type TestClass () =
 
     let logging(status,content) =
-        match parseClarBankErrorContent content with
+        match parseClearBankErrorContent content with
         | ClearBankEmptyResponse -> Console.WriteLine "Response was empty"
         | ClearBankTransactionError errors -> errors |> Seq.iter(fun (tid,err) -> Console.WriteLine("Transaction id " + tid + " failed for " + err))
         | ClearBankGeneralError(title, detail) -> Console.WriteLine(title + ", " + detail)
@@ -81,7 +81,7 @@ type TestClass () =
 
     [<TestMethod>]
     member this.CreateAccountTest () =
-        let actual = ClearBank.createNewAccount clearbankDefaultConfig azureKeyVaultCertificateName (Guid.NewGuid()) "04-06-98" "Test account" None |> Async.RunSynchronously
+        let actual = ClearBank.createNewAccount clearbankDefaultConfig azureKeyVaultCertificateName (Guid.NewGuid()) "04-06-98" "Test account" "Mr Account Tester" |> Async.RunSynchronously
         AssertTestResult actual
 
     [<TestMethod>]

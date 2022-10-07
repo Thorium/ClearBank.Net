@@ -34,8 +34,10 @@ type BankAccount =
     
 let [<Literal>]schemaV1 = __SOURCE_DIRECTORY__ + @"/clearbank-api-v1.json"
 let [<Literal>]schemaV2 = __SOURCE_DIRECTORY__ + @"/clearbank-api-v2.json"
+let [<Literal>]schemaV3Accounts = __SOURCE_DIRECTORY__ + @"/clearbank-api-v3-accounts.json"
 type ClearBankSwaggerV1 = SwaggerClientProvider<schemaV1, PreferAsync=true>
 type ClearBankSwaggerV2 = SwaggerClientProvider<schemaV2, PreferAsync=true>
+type ClearBankOpenApiV3Accounts = OpenApiClientProvider<schemaV3Accounts, PreferAsync=true>
 
 
 let unSuccessStatusCode = new Event<_>() // id, status, content
@@ -94,7 +96,7 @@ type ClearBankErrorStyle =
 | ClearBankGeneralError of Title: string * Detail: string
 | ClearBankUnknownError of Content: string
 
-let parseClarBankErrorContent(content:string) =
+let parseClearBankErrorContent(content:string) =
     if String.IsNullOrEmpty content then
         ClearBankEmptyResponse
     else
@@ -114,8 +116,11 @@ let parseClarBankErrorContent(content:string) =
 
 
 
-type Models = ClearBankSwaggerV2.ClearBank.FI.API.Versions.V2.Models
-type Payments = Models.Binding.Payments
+type ModelsV2 = ClearBankSwaggerV2.ClearBank.FI.API.Versions.V2.Models
+type PaymentsV2 = ModelsV2.Binding.Payments
+
+type ModelsV3Accounts = ClearBankOpenApiV3Accounts.ClearBank.FI.API.Accounts.Versions.V3.Models
+type AccountsV3 = ModelsV3Accounts.Binding.Accounts
 
 let setKeyVaultCredentials options =
     match options with
@@ -185,14 +190,14 @@ let callTestEndpoint config azureKeyVaultCertificateName =
 let ``account to string`` acc =
     match acc with
     | IBAN nr ->
-        Payments.PaymentInstructionCounterpartAccountIdentification(iban = nr)
+        PaymentsV2.PaymentInstructionCounterpartAccountIdentification(iban = nr)
     | BBAN nr ->
-        Payments.PaymentInstructionCounterpartAccountIdentification(
+        PaymentsV2.PaymentInstructionCounterpartAccountIdentification(
             //iban = "iban",
             other =
-                Models.CounterpartAccountGenericIdentification(
+                ModelsV2.CounterpartAccountGenericIdentification(
                     nr,
-                    schemeName = Models.CounterpartAccountGenericIdentificationScheme(
+                    schemeName = ModelsV2.CounterpartAccountGenericIdentificationScheme(
                                     proprietary = "BBAN"
                                     )
                     //,"issuer"
@@ -202,12 +207,12 @@ let ``account to string`` acc =
             "GBR" +
                 sortcode.Replace(" ", "").Replace("-", "") +
                 account.Replace(" ", "").Replace("-", "")
-        Payments.PaymentInstructionCounterpartAccountIdentification(
+        PaymentsV2.PaymentInstructionCounterpartAccountIdentification(
             //iban = "iban",
             other =
-                Models.CounterpartAccountGenericIdentification(
+                ModelsV2.CounterpartAccountGenericIdentification(
                     identifier,
-                    schemeName = Models.CounterpartAccountGenericIdentificationScheme(
+                    schemeName = ModelsV2.CounterpartAccountGenericIdentificationScheme(
                                     proprietary = "PRTY_COUNTRY_SPECIFIC"
                                     )
                     //,"issuer"
@@ -224,20 +229,20 @@ type PaymentTransfer = {
 }
 
 let createCreditTransfer (payment:PaymentTransfer) =
-    Payments.CreditTransfer(
-        paymentIdentification = Payments.PaymentIdentification(
+    PaymentsV2.CreditTransfer(
+        paymentIdentification = PaymentsV2.PaymentIdentification(
                                     payment.Description, // instructionIdentification
                                     payment.TransactionId // endToEndIdentification
                                 ),
 
-        amount = Models.Amount(Convert.ToDouble payment.Sum, payment.Currency),
-        creditor = Payments.PartyIdentifier(payment.AccountHolder (*, "legalEntityIdentifier"*)),
-        creditorAccount = Payments.PaymentInstructionCounterpartAccount(
+        amount = ModelsV2.Amount(Convert.ToDouble payment.Sum, payment.Currency),
+        creditor = PaymentsV2.PartyIdentifier(payment.AccountHolder (*, "legalEntityIdentifier"*)),
+        creditorAccount = PaymentsV2.PaymentInstructionCounterpartAccount(
             identification = ``account to string`` payment.To),
         remittanceInformation =
-            Payments.RemittanceInformation(structured = 
-                Payments.Structured(creditorReferenceInformation = 
-                    Payments.CreditorReferenceInformation(payment.PaymentReference // reference
+            PaymentsV2.RemittanceInformation(structured = 
+                PaymentsV2.Structured(creditorReferenceInformation = 
+                    PaymentsV2.CreditorReferenceInformation(payment.PaymentReference // reference
 
                 )
             )
@@ -246,11 +251,11 @@ let createCreditTransfer (payment:PaymentTransfer) =
 
 let createPaymentInstruction batchId account transfers =
     let req =
-        Payments.PaymentInstruction(
+        PaymentsV2.PaymentInstruction(
             paymentInstructionIdentification = batchId,
             requestedExecutionDate = Some DateTime.UtcNow.Date,
-            debtor = Payments.DebtorPartyIdentifier( (*legalEntityIdentifier*) ), // "string" ),
-            debtorAccount = Payments.PaymentInstructionCounterpartAccount(
+            debtor = PaymentsV2.DebtorPartyIdentifier( (*legalEntityIdentifier*) ), // "string" ),
+            debtorAccount = PaymentsV2.PaymentInstructionCounterpartAccount(
                 identification = ``account to string`` account
                 ),
             creditTransfers = transfers
@@ -260,11 +265,8 @@ let createPaymentInstruction batchId account transfers =
 
 let createNewAccount config azureKeyVaultCertificateName (requestId:Guid) sortCode accountName ownerName =
     let req =
-        match ownerName with
-        | Some oname -> 
-            let owner = Models.Binding.Accounts.PartyIdentification(oname)
-            Models.Binding.Accounts.CreateAccountRequest(accountName, sortCode, owner)
-        | None -> Models.Binding.Accounts.CreateAccountRequest(accountName, sortCode.Replace("-", ""))
+        let owner = AccountsV3.PartyIdentification(ownerName)
+        AccountsV3.CreateAccountRequest(accountName, owner, sortCode)
     let requestIdS = requestId.ToString("N") //todo, unique, save to db
 
     let httpClient =
@@ -274,7 +276,7 @@ let createNewAccount config azureKeyVaultCertificateName (requestId:Guid) sortCo
             let handler1 = new HttpClientHandler (UseCookies = false)
             let handler2 = new ErrorHandler(handler1)
             new System.Net.Http.HttpClient(handler2, BaseAddress=new Uri(config.BaseUrl))
-    let client = ClearBankSwaggerV2.Client httpClient
+    let client = ClearBankOpenApiV3Accounts.Client httpClient
 
     async {
 
@@ -286,7 +288,7 @@ let createNewAccount config azureKeyVaultCertificateName (requestId:Guid) sortCo
             if config.LogUnsuccessfulHandler.IsSome then
                 Some (reportUnsuccessfulEvents requestIdS config.LogUnsuccessfulHandler.Value)
             else None
-        let! r = client.V2AccountsPost(authToken, signature_bodyhash_string, requestIdS, req) |> Async.Catch
+        let! r = client.V3InstitutionsByInstitutionIdAccountsPost(authToken, signature_bodyhash_string, requestIdS, req) |> Async.Catch
         httpClient.Dispose()
         if subscription.IsSome then
             subscription.Value.Dispose()
@@ -306,11 +308,11 @@ let getAccounts config =
             let handler1 = new HttpClientHandler (UseCookies = false)
             let handler2 = new ErrorHandler(handler1)
             new System.Net.Http.HttpClient(handler2, BaseAddress=new Uri(config.BaseUrl))
-    let client = ClearBankSwaggerV2.Client httpClient
+    let client = ClearBankOpenApiV3Accounts.Client httpClient
 
     async {
         let authToken = "Bearer " + config.PrivateKey
-        let! r = client.V2AccountsGet(authToken) |> Async.Catch
+        let! r = client.V3InstitutionsByInstitutionIdAccountsGet(authToken) |> Async.Catch
         httpClient.Dispose()
         match r with
         | Choice1Of2 x -> return Ok x
@@ -343,7 +345,7 @@ let getTransactions config pageSize pageNumber startDate endDate =
 
 let transferPayments config azureKeyVaultCertificateName (requestId:Guid) paymnentInstructions =
 
-    let req = Payments.CreateCreditTransferRequest(
+    let req = PaymentsV2.CreateCreditTransferRequest(
                 paymentInstructions = paymnentInstructions)
     let requestIdS = requestId.ToString("N") //todo, unique, save to db
     let httpClient =
