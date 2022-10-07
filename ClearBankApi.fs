@@ -35,9 +35,12 @@ type BankAccount =
 let [<Literal>]schemaV1 = __SOURCE_DIRECTORY__ + @"/clearbank-api-v1.json"
 let [<Literal>]schemaV2 = __SOURCE_DIRECTORY__ + @"/clearbank-api-v2.json"
 let [<Literal>]schemaV3Accounts = __SOURCE_DIRECTORY__ + @"/clearbank-api-v3-accounts.json"
+let [<Literal>]schemaV3PaymentsFps = __SOURCE_DIRECTORY__ + @"/fps-initiate-payment-v3.json"
+
 type ClearBankSwaggerV1 = SwaggerClientProvider<schemaV1, PreferAsync=true>
 type ClearBankSwaggerV2 = SwaggerClientProvider<schemaV2, PreferAsync=true>
 type ClearBankOpenApiV3Accounts = OpenApiClientProvider<schemaV3Accounts, PreferAsync=true>
+type FpsPaymentsV3 = OpenApiClientProvider<schemaV3PaymentsFps, PreferAsync=true>
 
 
 let unSuccessStatusCode = new Event<_>() // id, status, content
@@ -114,11 +117,6 @@ let parseClearBankErrorContent(content:string) =
     with
     | _ -> content |> ClearBankUnknownError
 
-
-
-type ModelsV2 = ClearBankSwaggerV2.ClearBank.FI.API.Versions.V2.Models
-type PaymentsV2 = ModelsV2.Binding.Payments
-
 type ModelsV3Accounts = ClearBankOpenApiV3Accounts.ClearBank.FI.API.Accounts.Versions.V3.Models
 type AccountsV3 = ModelsV3Accounts.Binding.Accounts
 
@@ -190,14 +188,14 @@ let callTestEndpoint config azureKeyVaultCertificateName =
 let ``account to string`` acc =
     match acc with
     | IBAN nr ->
-        PaymentsV2.PaymentInstructionCounterpartAccountIdentification(iban = nr)
+        FpsPaymentsV3.BatchPaymentInstructionCounterpartAccountIdentification(iban = nr)
     | BBAN nr ->
-        PaymentsV2.PaymentInstructionCounterpartAccountIdentification(
+        FpsPaymentsV3.BatchPaymentInstructionCounterpartAccountIdentification(
             //iban = "iban",
             other =
-                ModelsV2.CounterpartAccountGenericIdentification(
+                FpsPaymentsV3.BatchCounterpartAccountGenericIdentification(
                     nr,
-                    schemeName = ModelsV2.CounterpartAccountGenericIdentificationScheme(
+                    schemeName = FpsPaymentsV3.CounterpartAccountGenericIdentificationScheme(
                                     proprietary = "BBAN"
                                     )
                     //,"issuer"
@@ -207,12 +205,12 @@ let ``account to string`` acc =
             "GBR" +
                 sortcode.Replace(" ", "").Replace("-", "") +
                 account.Replace(" ", "").Replace("-", "")
-        PaymentsV2.PaymentInstructionCounterpartAccountIdentification(
+        FpsPaymentsV3.BatchPaymentInstructionCounterpartAccountIdentification(
             //iban = "iban",
             other =
-                ModelsV2.CounterpartAccountGenericIdentification(
+                FpsPaymentsV3.BatchCounterpartAccountGenericIdentification(
                     identifier,
-                    schemeName = ModelsV2.CounterpartAccountGenericIdentificationScheme(
+                    schemeName = FpsPaymentsV3.CounterpartAccountGenericIdentificationScheme(
                                     proprietary = "PRTY_COUNTRY_SPECIFIC"
                                     )
                     //,"issuer"
@@ -229,20 +227,20 @@ type PaymentTransfer = {
 }
 
 let createCreditTransfer (payment:PaymentTransfer) =
-    PaymentsV2.CreditTransfer(
-        paymentIdentification = PaymentsV2.PaymentIdentification(
+    FpsPaymentsV3.BatchCreditTransfer(
+        paymentIdentification = FpsPaymentsV3.BatchPaymentIdentification(
                                     payment.Description, // instructionIdentification
                                     payment.TransactionId // endToEndIdentification
                                 ),
 
-        amount = ModelsV2.Amount(Convert.ToDouble payment.Sum, payment.Currency),
-        creditor = PaymentsV2.PartyIdentifier(payment.AccountHolder (*, "legalEntityIdentifier"*)),
-        creditorAccount = PaymentsV2.PaymentInstructionCounterpartAccount(
+        amount = FpsPaymentsV3.BatchAmount(Convert.ToDouble payment.Sum, payment.Currency),
+        creditor = FpsPaymentsV3.BatchCreditorPartyIdentifier(payment.AccountHolder (*, "legalEntityIdentifier"*)),
+        creditorAccount = FpsPaymentsV3.BatchPaymentInstructionCounterpartAccount(
             identification = ``account to string`` payment.To),
         remittanceInformation =
-            PaymentsV2.RemittanceInformation(structured = 
-                PaymentsV2.Structured(creditorReferenceInformation = 
-                    PaymentsV2.CreditorReferenceInformation(payment.PaymentReference // reference
+            FpsPaymentsV3.BatchRemittanceInformation(structured = 
+                FpsPaymentsV3.BatchStructured(creditorReferenceInformation = 
+                    FpsPaymentsV3.BatchCreditorReferenceInformation(payment.PaymentReference // reference
 
                 )
             )
@@ -251,11 +249,11 @@ let createCreditTransfer (payment:PaymentTransfer) =
 
 let createPaymentInstruction batchId account transfers =
     let req =
-        PaymentsV2.PaymentInstruction(
+        FpsPaymentsV3.BatchPaymentInstruction(
+            //requestedExecutionDate = Some DateTime.UtcNow.Date,
+            debtor = FpsPaymentsV3.BatchDebtorPartyIdentifier( (*legalEntityIdentifier*) ), // "string" ),
             paymentInstructionIdentification = batchId,
-            requestedExecutionDate = Some DateTime.UtcNow.Date,
-            debtor = PaymentsV2.DebtorPartyIdentifier( (*legalEntityIdentifier*) ), // "string" ),
-            debtorAccount = PaymentsV2.PaymentInstructionCounterpartAccount(
+            debtorAccount = FpsPaymentsV3.BatchPaymentInstructionCounterpartAccount(
                 identification = ``account to string`` account
                 ),
             creditTransfers = transfers
@@ -343,10 +341,10 @@ let getTransactions config pageSize pageNumber startDate endDate =
             return Error(err, details)
     }
 
-let transferPayments config azureKeyVaultCertificateName (requestId:Guid) paymnentInstructions =
+let transferPayments config azureKeyVaultCertificateName (requestId:Guid) paymentInstructions =
 
-    let req = PaymentsV2.CreateCreditTransferRequest(
-                paymentInstructions = paymnentInstructions)
+    let req = FpsPaymentsV3.BatchCreateCreditTransferRequest(
+                paymentInstructions = paymentInstructions)
     let requestIdS = requestId.ToString("N") //todo, unique, save to db
     let httpClient =
         if config.LogUnsuccessfulHandler.IsNone then
@@ -356,12 +354,11 @@ let transferPayments config azureKeyVaultCertificateName (requestId:Guid) paymne
             let handler2 = new ErrorHandler(handler1)
             new System.Net.Http.HttpClient(handler2, BaseAddress=new Uri(config.BaseUrl))
 
-    let client = ClearBankSwaggerV2.Client httpClient
+    let client = FpsPaymentsV3.Client httpClient
 
     async {
 
         let authToken = "Bearer " + config.PrivateKey
-        let scheme = "FPS" // "Bacs"
         let toHash = client.Serialize req
         let! signature_bodyhash_string = calculateSignature config azureKeyVaultCertificateName toHash
             
@@ -369,7 +366,7 @@ let transferPayments config azureKeyVaultCertificateName (requestId:Guid) paymne
             if config.LogUnsuccessfulHandler.IsSome then
                 Some (reportUnsuccessfulEvents requestIdS config.LogUnsuccessfulHandler.Value)
             else None
-        let! r = client.V2PaymentsBySchemePost(scheme, authToken, signature_bodyhash_string, requestIdS, req) |> Async.Catch
+        let! r = client.Post(authToken, signature_bodyhash_string, requestIdS, req) |> Async.Catch
         httpClient.Dispose()
         if subscription.IsSome then
             subscription.Value.Dispose()
