@@ -250,14 +250,14 @@ let createCreditTransfer (payment:PaymentTransfer) =
 let createPaymentInstruction batchId account transfers =
     let req =
         FpsPaymentsV3.BatchPaymentInstruction(
-            //requestedExecutionDate = Some DateTime.UtcNow.Date,
-            debtor = FpsPaymentsV3.BatchDebtorPartyIdentifier( (*legalEntityIdentifier*) ), // "string" ),
+            debtor = FpsPaymentsV3.BatchDebtorPartyIdentifier(
+                address = "1 Test Street, Teston TE57 1NG",
+                legalEntityIdentifier = "TestCo Ltd" ),
             paymentInstructionIdentification = batchId,
             debtorAccount = FpsPaymentsV3.BatchPaymentInstructionCounterpartAccount(
                 identification = ``account to string`` account
                 ),
             creditTransfers = transfers
-            // ,"channelname", DateTime.UtcNow
         )
     req
 
