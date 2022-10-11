@@ -6,7 +6,7 @@ open Microsoft.VisualStudio.TestTools.UnitTesting
 
 [<TestClass>]
 type TestClass () =
-
+    let rnd = new System.Random()
     let logging(status,content) =
         match parseClearBankErrorContent content with
         | ClearBankEmptyResponse -> Console.WriteLine "Response was empty"
@@ -58,7 +58,7 @@ type TestClass () =
                 Sum = 123.00m
                 Currency = "GBP"
                 Description = "Phone Bill"
-                PaymentReference = "123456789"
+                PaymentReference = "123456789" + rnd.Next(1000).ToString()
                 TransactionId = "123456789"
             } |> ClearBank.createCreditTransfer
 
@@ -69,12 +69,13 @@ type TestClass () =
                 Sum = 123.00m
                 Currency = "GBP"
                 Description = "Some money"
-                PaymentReference = "12345"
-                TransactionId = "12345"
+                PaymentReference = "12345" + rnd.Next(1000).ToString()
+                TransactionId = "12345" // End-to-end: You identify corresponding webhooks with this.
             } |> ClearBank.createCreditTransfer
 
         let xreq = Guid.NewGuid()
-        let instructions = ClearBank.createPaymentInstruction "Batch123" fromAccount [| target1; target2 |]
+        let batchId = "Batch123" + rnd.Next(1000).ToString()
+        let instructions = ClearBank.createPaymentInstruction batchId fromAccount [| target1; target2 |]
         let actual = ClearBank.transferPayments clearbankDefaultConfig azureKeyVaultCertificateName xreq [| instructions |] |> Async.RunSynchronously
         AssertTestResult actual
 
