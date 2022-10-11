@@ -82,7 +82,7 @@ type TestClass () =
 
     [<TestMethod>]
     member this.CreateAccountTest () =
-        let actual = ClearBank.createNewAccount clearbankDefaultConfig azureKeyVaultCertificateName (Guid.NewGuid()) "04-06-98" "Test account" "Mr Account Tester" |> Async.RunSynchronously
+        let actual = ClearBank.createNewAccount clearbankDefaultConfig azureKeyVaultCertificateName (Guid.NewGuid()) "04-06-05" "Test account" "Mr Account Tester" |> Async.RunSynchronously
         AssertTestResult actual
 
     [<TestMethod>]

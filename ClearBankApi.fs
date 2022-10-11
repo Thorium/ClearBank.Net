@@ -261,10 +261,10 @@ let createPaymentInstruction address legalEntityIdentifier batchId account trans
         )
     req
 
-let createNewAccount config azureKeyVaultCertificateName (requestId:Guid) sortCode accountName ownerName =
+let createNewAccount config azureKeyVaultCertificateName (requestId:Guid) (sortCode:string) accountName ownerName =
     let req =
         let owner = AccountsV3.PartyIdentification(ownerName)
-        AccountsV3.CreateAccountRequest(accountName, owner, sortCode)
+        AccountsV3.CreateAccountRequest(accountName, owner, (sortCode.Replace("-", "")))
     let requestIdS = requestId.ToString("N") //todo, unique, save to db
 
     let httpClient =
