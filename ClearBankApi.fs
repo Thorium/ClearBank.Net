@@ -247,12 +247,12 @@ let createCreditTransfer (payment:PaymentTransfer) =
         )
     )
 
-let createPaymentInstruction batchId account transfers =
+let createPaymentInstruction address legalEntityIdentifier batchId account transfers =
     let req =
         FpsPaymentsV3.BatchPaymentInstruction(
             debtor = FpsPaymentsV3.BatchDebtorPartyIdentifier(
-                address = "1 Test Street, Teston TE57 1NG",
-                legalEntityIdentifier = "TestCo Ltd" ),
+                address = address,
+                legalEntityIdentifier = (legalEntityIdentifier |> Option.defaultValue "")),
             paymentInstructionIdentification = batchId,
             debtorAccount = FpsPaymentsV3.BatchPaymentInstructionCounterpartAccount(
                 identification = ``account to string`` account
