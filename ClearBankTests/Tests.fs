@@ -75,7 +75,7 @@ type TestClass () =
 
         let xreq = Guid.NewGuid()
         let batchId = "Batch123" + rnd.Next(1000).ToString()
-        let instructions = ClearBank.createPaymentInstruction batchId fromAccount [| target1; target2 |]
+        let instructions = ClearBank.createPaymentInstruction "1 Test Street, Teston TE57 1NG" None batchId fromAccount [| target1; target2 |]
         let actual = ClearBank.transferPayments clearbankDefaultConfig azureKeyVaultCertificateName xreq [| instructions |] |> Async.RunSynchronously
         AssertTestResult actual
 
