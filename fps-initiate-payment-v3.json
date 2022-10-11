@@ -1,0 +1,675 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+        "title": "FI Initiation API 3.0",
+        "description": "FI Initiation API",
+        "version": "3.0.FPS-payment"
+    },
+    "paths": {
+        "/v3/Payments/FPS": {
+            "post": {
+                "tags": [
+                    "FpsPayments"
+                ],
+                "summary": "Initiate a payment using the faster payments scheme. This endpoint is FTR compliant.",
+                "description": "This endpoint works on a partial acceptance basis - meaning that you can submit 10 payments and only 6 of them may be accepted for processing.\r\n            \r\nEach payment instruction is validated against the scheme specific rules as well as the ISO20022 specification.\r\n            \r\nCurrently, only payments through GBP are supported. We have listed possible currencies for future proofing of the API.\r\n            \r\nThe remittance information must be scheme compatible. Values exceeding the length limits of the scheme will be truncated. Missing remittance information will be replaced by a blank string.",
+                "operationId": "Post",
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "Your API Token, retrieved from the web portal.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "DigitalSignature",
+                        "in": "header",
+                        "description": "Signed hash of the body of the request. The hash is signed by your private key.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Request-Id",
+                        "in": "header",
+                        "description": "A unique identifier for the request.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Information that should be used to create a batch credit transfer.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BatchCreateCreditTransferRequest"
+                            }
+                        }
+                    },
+                    "x-bodyName": "request"
+                },
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BatchCreditTransferResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "BatchAmount": {
+                "required": [
+                    "instructedAmount"
+                ],
+                "type": "object",
+                "properties": {
+                    "currency": {
+                        "enum": [
+                            "ALL",
+                            "DZD",
+                            "ARS",
+                            "AUD",
+                            "BSD",
+                            "BHD",
+                            "BDT",
+                            "AMD",
+                            "BBD",
+                            "BMD",
+                            "BTN",
+                            "BOB",
+                            "BWP",
+                            "BZD",
+                            "SBD",
+                            "BND",
+                            "MMK",
+                            "BIF",
+                            "KHR",
+                            "CAD",
+                            "CVE",
+                            "KYD",
+                            "LKR",
+                            "CLP",
+                            "CNY",
+                            "COP",
+                            "KMF",
+                            "CRC",
+                            "HRK",
+                            "CUP",
+                            "CZK",
+                            "DKK",
+                            "DOP",
+                            "SVC",
+                            "ETB",
+                            "ERN",
+                            "FKP",
+                            "FJD",
+                            "DJF",
+                            "GMD",
+                            "GIP",
+                            "GTQ",
+                            "GNF",
+                            "GYD",
+                            "HTG",
+                            "HNL",
+                            "HKD",
+                            "HUF",
+                            "ISK",
+                            "INR",
+                            "IDR",
+                            "IRR",
+                            "IQD",
+                            "ILS",
+                            "JMD",
+                            "JPY",
+                            "KZT",
+                            "JOD",
+                            "KES",
+                            "KPW",
+                            "KRW",
+                            "KWD",
+                            "KGS",
+                            "LAK",
+                            "LBP",
+                            "LSL",
+                            "LRD",
+                            "LYD",
+                            "MOP",
+                            "MWK",
+                            "MYR",
+                            "MVR",
+                            "MUR",
+                            "MXN",
+                            "MNT",
+                            "MDL",
+                            "MAD",
+                            "OMR",
+                            "NAD",
+                            "NPR",
+                            "ANG",
+                            "AWG",
+                            "VUV",
+                            "NZD",
+                            "NIO",
+                            "NGN",
+                            "NOK",
+                            "PKR",
+                            "PAB",
+                            "PGK",
+                            "PYG",
+                            "PEN",
+                            "PHP",
+                            "QAR",
+                            "RUB",
+                            "RWF",
+                            "SHP",
+                            "SAR",
+                            "SCR",
+                            "SLL",
+                            "SGD",
+                            "VND",
+                            "SOS",
+                            "ZAR",
+                            "SSP",
+                            "SZL",
+                            "SEK",
+                            "CHF",
+                            "SYP",
+                            "THB",
+                            "TOP",
+                            "TTD",
+                            "AED",
+                            "TND",
+                            "UGX",
+                            "MKD",
+                            "EGP",
+                            "GBP",
+                            "TZS",
+                            "USD",
+                            "UYU",
+                            "UZS",
+                            "WST",
+                            "YER",
+                            "TWD",
+                            "MRU",
+                            "STN",
+                            "CUC",
+                            "ZWL",
+                            "BYN",
+                            "TMT",
+                            "GHS",
+                            "VEF",
+                            "SDG",
+                            "UYI",
+                            "RSD",
+                            "MZN",
+                            "AZN",
+                            "RON",
+                            "CHE",
+                            "CHW",
+                            "TRY",
+                            "XAF",
+                            "XCD",
+                            "XOF",
+                            "XPF",
+                            "XBA",
+                            "XBB",
+                            "XBC",
+                            "XBD",
+                            "XAU",
+                            "XDR",
+                            "XAG",
+                            "XPT",
+                            "XTS",
+                            "XPD",
+                            "XUA",
+                            "ZMW",
+                            "SRD",
+                            "MGA",
+                            "COU",
+                            "AFN",
+                            "TJS",
+                            "AOA",
+                            "BGN",
+                            "CDF",
+                            "BAM",
+                            "EUR",
+                            "MXV",
+                            "UAH",
+                            "GEL",
+                            "BOV",
+                            "PLN",
+                            "BRL",
+                            "CLF",
+                            "XSU",
+                            "USN",
+                            "XXX"
+                        ],
+                        "type": "string",
+                        "description": "The currency code must be a valid active currency code, not yet withdrawn on the day the message containing the currency is exchanged. Valid active currency codes are registered with the ISO 4217 Maintenance Agency, consist of three (3) contiguous letters, and are not yet withdrawn on the day the message containing the Currency is exchanged.",
+                        "nullable": true
+                    },
+                    "instructedAmount": {
+                        "type": "number",
+                        "description": "Amount of funds to be moved between the debtor and creditor (prior to deduction of charges) in GBP.",
+                        "format": "double"
+                    }
+                },
+                "additionalProperties": false,
+                "description": "Indicates the amount and the currency used in a given transaction or account balance."
+            },
+            "BatchCounterpartAccountGenericIdentification": {
+                "required": [
+                    "identification",
+                    "schemeName"
+                ],
+                "type": "object",
+                "properties": {
+                    "issuer": {
+                        "maxLength": 35,
+                        "minLength": 0,
+                        "type": "string",
+                        "description": "The name of the entity that assigns the identification.",
+                        "nullable": true
+                    },
+                    "identification": {
+                        "maxLength": 34,
+                        "minLength": 1,
+                        "type": "string",
+                        "description": "Identification assigned by an institution."
+                    },
+                    "schemeName": {
+                        "$ref": "#/components/schemas/CounterpartAccountGenericIdentificationScheme",
+                        "description": "Name of the identification scheme."
+                    }
+                },
+                "additionalProperties": false,
+                "description": "Unique identification of an account, as assigned by the account servicer, using an identification scheme."
+            },
+            "BatchCreateCreditTransferRequest": {
+                "required": [
+                    "paymentInstructions"
+                ],
+                "type": "object",
+                "properties": {
+                    "paymentInstructions": {
+                        "type": "array",
+                        "maxLength": 10,
+                        "minLength": 1,
+                        "items": {
+                            "$ref": "#/components/schemas/BatchPaymentInstruction"
+                        },
+                        "description": "Details of the payments to be made."
+                    }
+                },
+                "additionalProperties": false,
+                "description": "Information that should be used to create a batch credit transfer."
+            },
+            "BatchCreditTransfer": {
+                "required": [
+                    "amount",
+                    "creditor",
+                    "creditorAccount",
+                    "paymentIdentification",
+                    "remittanceInformation"
+                ],
+                "type": "object",
+                "properties": {
+                    "paymentIdentification": {
+                        "$ref": "#/components/schemas/BatchPaymentIdentification",
+                        "description": "Identification of the payment instruction."
+                    },
+                    "amount": {
+                        "$ref": "#/components/schemas/BatchAmount",
+                        "description": "Indicates the amount and the currency used in a given transaction or account balance."
+                    },
+                    "creditor": {
+                        "$ref": "#/components/schemas/BatchCreditorPartyIdentifier",
+                        "description": "The name and, optionally, the legal entity identifier of the account."
+                    },
+                    "creditorAccount": {
+                        "$ref": "#/components/schemas/BatchPaymentInstructionCounterpartAccount",
+                        "description": "Information about the counterpart in a given transaction."
+                    },
+                    "remittanceInformation": {
+                        "$ref": "#/components/schemas/BatchRemittanceInformation",
+                        "description": "Information supplied to enable the matching/reconciliation of an entry with the items that the payment is intended to settle, such as commercial invoices in an accounts’ receivable system."
+                    }
+                },
+                "additionalProperties": false,
+                "description": "Represents a creditor in a payment instruction."
+            },
+            "BatchCreditTransferResponse": {
+                "type": "object",
+                "properties": {
+                    "transactions": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PaymentInstructionResponse"
+                        },
+                        "description": "The acceptance or rejection status of each individual payment instruction",
+                        "nullable": true
+                    },
+                    "halLinks": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/HalLink"
+                        },
+                        "description": "Hypermedia links.",
+                        "nullable": true
+                    }
+                },
+                "additionalProperties": false,
+                "description": "The result of each payment instruction and applicable links"
+            },
+            "BatchCreditorPartyIdentifier": {
+                "required": [
+                    "name"
+                ],
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "maxLength": 140,
+                        "minLength": 1,
+                        "type": "string",
+                        "description": "The name of the account holder."
+                    },
+                    "legalEntityIndentifier": {
+                        "maxLength": 35,
+                        "minLength": 0,
+                        "type": "string",
+                        "description": "The legal entity identifier of the account holder (eg: charity number). This should be supplied if known.",
+                        "nullable": true
+                    }
+                },
+                "additionalProperties": false,
+                "description": "The name and, optionally, the legal entity identifier of the account."
+            },
+            "BatchCreditorReferenceInformation": {
+                "type": "object",
+                "properties": {
+                    "reference": {
+                        "maxLength": 35,
+                        "minLength": 0,
+                        "type": "string",
+                        "description": "A reference, as assigned by the ultimate debtor to unambiguously refer to the payment transaction. Conditionally required if supplied by the ultimate debtor.",
+                        "nullable": true
+                    }
+                },
+                "additionalProperties": false,
+                "description": "Reference information provided by the ultimate debtor to allow the identification of underlying documents by the creditor."
+            },
+            "BatchDebtorPartyIdentifier": {
+                "required": [
+                    "address"
+                ],
+                "type": "object",
+                "properties": {
+                    "legalEntityIdentifier": {
+                        "maxLength": 35,
+                        "minLength": 0,
+                        "type": "string",
+                        "description": "The legal entity identifier of the account holder (eg: charity number). This should be supplied if known.",
+                        "nullable": true
+                    },
+                    "address": {
+                        "maxLength": 140,
+                        "minLength": 1,
+                        "type": "string",
+                        "description": "The address of the account holder."
+                    }
+                },
+                "additionalProperties": false,
+                "description": "Optionally, the legal entity identifier of the account\r\nMandatory the Address of the account"
+            },
+            "BatchPaymentIdentification": {
+                "required": [
+                    "endToEndIdentification",
+                    "instructionIdentification"
+                ],
+                "type": "object",
+                "properties": {
+                    "instructionIdentification": {
+                        "maxLength": 35,
+                        "minLength": 1,
+                        "type": "string",
+                        "description": "Unique identification, as assigned by an instructing party for an instructed party, to unambiguously identify the instruction."
+                    },
+                    "endToEndIdentification": {
+                        "maxLength": 35,
+                        "minLength": 1,
+                        "type": "string",
+                        "description": "Unique identification, as assigned by the initiating party to unambiguously identify the transaction. This identification is passed on unchanged throughout the entire end-to-end chain."
+                    }
+                },
+                "additionalProperties": false,
+                "description": "Identification of the payment instruction."
+            },
+            "BatchPaymentInstruction": {
+                "required": [
+                    "creditTransfers",
+                    "debtor",
+                    "debtorAccount",
+                    "paymentInstructionIdentification"
+                ],
+                "type": "object",
+                "properties": {
+                    "debtor": {
+                        "$ref": "#/components/schemas/BatchDebtorPartyIdentifier",
+                        "description": "Details about the account holder."
+                    },
+                    "paymentInstructionIdentification": {
+                        "maxLength": 35,
+                        "minLength": 1,
+                        "type": "string",
+                        "description": "The unique identifier for the payment instruction."
+                    },
+                    "debtorAccount": {
+                        "$ref": "#/components/schemas/BatchPaymentInstructionCounterpartAccount",
+                        "description": "Information about the counterpart in a given transaction."
+                    },
+                    "creditTransfers": {
+                        "type": "array",
+                        "maxLength": 10,
+                        "minLength": 1,
+                        "items": {
+                            "$ref": "#/components/schemas/BatchCreditTransfer"
+                        },
+                        "description": "A series of payments that should be made from the debtor account."
+                    }
+                },
+                "additionalProperties": false,
+                "description": "A payment from a single account to multiple creditors."
+            },
+            "BatchPaymentInstructionCounterpartAccount": {
+                "required": [
+                    "identification"
+                ],
+                "type": "object",
+                "properties": {
+                    "identification": {
+                        "$ref": "#/components/schemas/BatchPaymentInstructionCounterpartAccountIdentification",
+                        "description": "The identifiable information of an account."
+                    }
+                },
+                "additionalProperties": false,
+                "description": "Information about the counterpart in a given transaction."
+            },
+            "BatchPaymentInstructionCounterpartAccountIdentification": {
+                "type": "object",
+                "properties": {
+                    "iban": {
+                        "type": "string",
+                        "description": "The International Bank Account Number of the account.",
+                        "nullable": true
+                    },
+                    "other": {
+                        "$ref": "#/components/schemas/BatchCounterpartAccountGenericIdentification",
+                        "description": "Unique identification of an account, as assigned by the account servicer, using an identification scheme.",
+                        "nullable": true
+                    }
+                },
+                "additionalProperties": false,
+                "description": "The identifiable information of an account."
+            },
+            "BatchRemittanceInformation": {
+                "type": "object",
+                "properties": {
+                    "structured": {
+                        "$ref": "#/components/schemas/BatchStructured",
+                        "description": "Information supplied by the remitter (in a structured form), to reconcile an entry with item(s) that the payment intends to settle (e.g., a purchase reference number).",
+                        "nullable": true
+                    }
+                },
+                "additionalProperties": false,
+                "description": "Information supplied to enable the matching/reconciliation of an entry with the items that the payment is intended to settle, such as commercial invoices in an accounts’ receivable system."
+            },
+            "BatchStructured": {
+                "type": "object",
+                "properties": {
+                    "creditorReferenceInformation": {
+                        "$ref": "#/components/schemas/BatchCreditorReferenceInformation",
+                        "description": "Reference information provided by the ultimate debtor to allow the identification of underlying documents by the creditor.",
+                        "nullable": true
+                    }
+                },
+                "additionalProperties": false,
+                "description": "Information supplied by the remitter (in a structured form), to reconcile an entry with item(s) that the payment intends to settle (e.g., a purchase reference number)."
+            },
+            "CounterpartAccountGenericIdentificationScheme": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "enum": [
+                            "BBAN",
+                            "CUID",
+                            "UPIC"
+                        ],
+                        "type": "string",
+                        "description": "Name of the identification scheme in coded form. No need to specify if you are providing this information in free-form text (i.e., in the \"proprietary\" field).",
+                        "nullable": true
+                    },
+                    "proprietary": {
+                        "maxLength": 35,
+                        "minLength": 0,
+                        "type": "string",
+                        "description": "Name of the identification scheme in free-form text. No need to specify if you are providing this name in coded form (i.e., in the \"code\" field).",
+                        "nullable": true
+                    }
+                },
+                "additionalProperties": false,
+                "description": "Information about the identification scheme in coded form or free-form text."
+            },
+            "HalLink": {
+                "required": [
+                    "href",
+                    "name"
+                ],
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "The named link type."
+                    },
+                    "href": {
+                        "type": "string",
+                        "description": "URI to be used."
+                    },
+                    "templated": {
+                        "type": "boolean",
+                        "description": "Specifies \"true\" if href is a URI template, i.e., with parameters. Otherwise, this property is absent or set to false."
+                    }
+                },
+                "additionalProperties": false,
+                "description": "Hypermedia link."
+            },
+            "PaymentInstructionResponse": {
+                "required": [
+                    "endToEndIdentification",
+                    "response"
+                ],
+                "type": "object",
+                "properties": {
+                    "endToEndIdentification": {
+                        "type": "string",
+                        "description": "Unique identification, as assigned by the initiating party to unambiguously identify the transaction."
+                    },
+                    "response": {
+                        "enum": [
+                            "Accepted",
+                            "AccountDisabled",
+                            "InsufficientFunds",
+                            "InvalidAccount",
+                            "InvalidCurrency",
+                            "Rejected",
+                            "DebitPaymentDisabled"
+                        ],
+                        "type": "string",
+                        "description": "The result of how the payment instruction has been processed."
+                    }
+                },
+                "additionalProperties": false,
+                "description": "The acceptance or rejection status of a payment instruction."
+            },
+            "ProblemDetails": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "description": "A URI reference [RFC3986] that identifies the problem type. This specification encourages that, when dereferenced, it provides human-readable documentation for the problem type (e.g., using HTML [W3C.REC-html5-20141028]). When this member is not present, its value is assumed to be \"about:blank\".",
+                        "nullable": true
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "A short, human-readable summary of the problem type. It SHOULD NOT change from occurrence to occurrence of the problem, except for purposes of localization (e.g., using proactive content negotiation; see[RFC7231], Section 3.4).",
+                        "nullable": true
+                    },
+                    "status": {
+                        "type": "integer",
+                        "description": "The HTTP status code([RFC7231], Section 6) generated by the origin server for this occurrence of the problem.",
+                        "format": "int32",
+                        "nullable": true
+                    },
+                    "detail": {
+                        "type": "string",
+                        "description": "A human-readable explanation specific to this occurrence of the problem.",
+                        "nullable": true
+                    },
+                    "instance": {
+                        "type": "string",
+                        "description": "A URI reference that identifies the specific occurrence of the problem. It may or may not yield further information if dereferenced.",
+                        "nullable": true
+                    }
+                },
+                "additionalProperties": {},
+                "description": "A machine-readable format for specifying errors in HTTP API responses based on https://tools.ietf.org/html/rfc7807"
+            }
+        }
+    }
+}
