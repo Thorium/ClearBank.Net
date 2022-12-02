@@ -12,7 +12,7 @@ let createResponsePlain (nonce:int64) =
 
 /// Creates a valid response that will not escape JSON object strings
 let createResponse config azureKeyVaultCertificateName (request:System.Net.Http.HttpRequestMessage) nonce =
-    async {
+    task {
         let responseContent = nonce |> createResponsePlain
 
         let! signature = ClearBank.calculateSignature config azureKeyVaultCertificateName responseContent

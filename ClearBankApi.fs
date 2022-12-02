@@ -60,7 +60,7 @@ type ErrorHandler(messageHandler) =
             return result
         } |> Async.StartAsTask
 
-let reportUnsuccessfulEvents xRequestId handler =
+let internal reportUnsuccessfulEvents xRequestId handler =
     let evt = 
         unSuccessStatusCode.Publish
         |> Event.filter(fun (id,status,content) -> id = Some xRequestId)
@@ -120,15 +120,15 @@ let parseClearBankErrorContent(content:string) =
 type ModelsV3Accounts = ClearBankOpenApiV3Accounts.ClearBank.FI.API.Accounts.Versions.V3.Models
 type AccountsV3 = ModelsV3Accounts.Binding.Accounts
 
-let setKeyVaultCredentials options =
+let internal setKeyVaultCredentials options =
     match options with
     | DefaultCredentials -> ()
     | CredentialsWithOptions opts -> 
         KeyVault.configureAzureCredentials <- fun() ->
             Azure.Identity.DefaultAzureCredential opts
 
-let calculateSignature config azureKeyVaultCertificateName requestBody =
-    async {
+let internal calculateSignature config azureKeyVaultCertificateName requestBody =
+    task {
         setKeyVaultCredentials config.AzureKeyVaultCredentials
         let! signature_bodyhash = KeyVault.signAsync config.AzureKeyVaultName azureKeyVaultCertificateName requestBody
         let signature_bodyhash_string = 
@@ -138,7 +138,7 @@ let calculateSignature config azureKeyVaultCertificateName requestBody =
     }
 
 
-let getErrorDetails : Exception -> string = function
+let internal getErrorDetails : Exception -> string = function
     | :? WebException as wex when wex.Response <> null ->
         use stream = wex.Response.GetResponseStream()
         use reader = new System.IO.StreamReader(stream)
@@ -165,7 +165,7 @@ let callTestEndpoint config azureKeyVaultCertificateName =
         let payload = Newtonsoft.Json.Linq.JObject.Parse("""{"institutionId": "string","body": "hello world!"}""") |> box
         let payloaStr = Newtonsoft.Json.JsonConvert.SerializeObject payload
 
-        let! signature_bodyhash_string = calculateSignature config azureKeyVaultCertificateName payloaStr
+        let! signature_bodyhash_string = calculateSignature config azureKeyVaultCertificateName payloaStr |> Async.AwaitTask
         let requestId = Guid.NewGuid().ToString("N")
 
         let subscription = 
@@ -280,7 +280,7 @@ let createNewAccount config azureKeyVaultCertificateName (requestId:Guid) (sortC
 
         let authToken = "Bearer " + config.PrivateKey
         let toHash = client.Serialize req
-        let! signature_bodyhash_string = calculateSignature config azureKeyVaultCertificateName toHash
+        let! signature_bodyhash_string = calculateSignature config azureKeyVaultCertificateName toHash |> Async.AwaitTask
 
         let subscription = 
             if config.LogUnsuccessfulHandler.IsSome then
@@ -360,7 +360,7 @@ let transferPayments config azureKeyVaultCertificateName (requestId:Guid) paymen
 
         let authToken = "Bearer " + config.PrivateKey
         let toHash = client.Serialize req
-        let! signature_bodyhash_string = calculateSignature config azureKeyVaultCertificateName toHash
+        let! signature_bodyhash_string = calculateSignature config azureKeyVaultCertificateName toHash |> Async.AwaitTask
             
         let subscription = 
             if config.LogUnsuccessfulHandler.IsSome then

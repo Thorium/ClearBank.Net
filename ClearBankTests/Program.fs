@@ -2,10 +2,12 @@ module Program =
 
     [<EntryPoint>]
     let main _ =
-        let t = ClearBankTests.TestClass()
-        t.TestMethodPassingTest()
-        t.ProcessPaymentsTest()
-        //t.CreateAccountTest()
-        t.GetAccountsTest()
-        t.WebhookResponseTest()
-        0
+        task {
+            let t = ClearBankTests.TestClass()
+            do! t.TestMethodPassingTest()
+            do! t.ProcessPaymentsTest()
+            //do! t.CreateAccountTest()
+            do! t.GetAccountsTest()
+            do! t.WebhookResponseTest()
+            return 0
+        } |> Async.AwaitTask |> Async.RunSynchronously
