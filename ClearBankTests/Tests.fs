@@ -84,7 +84,8 @@ type TestClass () =
     [<TestMethod>]
     member this.CreateAccountTest () =
         task {
-            let! actual = ClearBank.createNewAccount clearbankDefaultConfig azureKeyVaultCertificateName (Guid.NewGuid()) "04-06-05" "Test account" "Mr Account Tester" 
+            let sortcode = match TestParameters.transferFromAccount with UK_Domestic(s, _) -> s | _ -> "04-06-05"
+            let! actual = ClearBank.createNewAccount clearbankDefaultConfig azureKeyVaultCertificateName (Guid.NewGuid()) sortcode "Test account" "Mr Account Tester"
             AssertTestResult actual
         } :> System.Threading.Tasks.Task
 
