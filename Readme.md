@@ -135,12 +135,17 @@ type CBWebhookController() as this =
 
     member __.Post ()
         async {
-            // 1. get public signature from headers "DigitalSignature" and verify it.
-            // You can get the key from ClearBank portal, and 
-            // depending on your .NET version, there are some classes under System.Security.Cryptography
-            
+            // 1. Verify the webhook against your ClearBank public key:
+
+            // Download the public key (a .pem file) from your ClearBank portal and use a converter such as https://raskeyconverter.azurewebsites.net/PemToXml to convert the text to XML
+            let publicKeyXml = "<RSAKeyValue>...</RSAKeyValue>"
+
+            let signature = this.Request.Headers.GetValues("DigitalSignature") |> Seq.tryHead |> Option.map Convert.FromBase64String //add some error handling
+            let! bodyJson = this.Request.Content.ReadAsStringAsync() |> Async.AwaitTask
+
+            let! isVerified = ClearBank.verifySignature publicKeyXml signature bodyJson //proceed only if true
+
             // 2. Parse and handle the request:
-            let! bodyJson = this.Request.Content.ReadAsStringAsync() |> Async.AwaitTask            
             let parsed = ClearBankWebhooks.parsePaymentsCall bodyJson
 
             // Use parsed.Type to get the webhook type.
