@@ -137,6 +137,19 @@ let internal calculateSignature config azureKeyVaultCertificateName requestBody 
         return signature_bodyhash_string
     }
 
+let verifySignature publicKeyXml signature requestBody =
+    task {
+        let verifyResult = KeyVault.verifyPublic publicKeyXml signature requestBody
+        return verifyResult
+    }
+
+let verifySignatureFromSecret config secretName signature requestBody =
+    task {
+        setKeyVaultCredentials config.AzureKeyVaultCredentials
+        let! publicKeyXml = KeyVault.getSecretAsync config.AzureKeyVaultName secretName
+        let verifyResult = KeyVault.verifyPublic publicKeyXml.Value signature requestBody
+        return verifyResult
+    }
 
 let internal getErrorDetails : Exception -> string = function
     | :? WebException as wex when wex.Response <> null ->

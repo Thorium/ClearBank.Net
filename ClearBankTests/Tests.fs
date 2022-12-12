@@ -84,7 +84,7 @@ type TestClass () =
     [<TestMethod>]
     member this.CreateAccountTest () =
         task {
-            let! actual = ClearBank.createNewAccount clearbankDefaultConfig azureKeyVaultCertificateName (Guid.NewGuid()) "04-06-05" "Test account" "Mr Account Tester" 
+            let! actual = ClearBank.createNewAccount clearbankDefaultConfig azureKeyVaultCertificateName (Guid.NewGuid()) TestParameters.sortCode "Test account" "Mr Account Tester" 
             AssertTestResult actual
         } :> System.Threading.Tasks.Task
 
@@ -146,4 +146,16 @@ type TestClass () =
             let! response = ClearBankWebhooks.createResponse clearbankDefaultConfig azureKeyVaultCertificateName thisRequest test.Nonce
 
             Assert.IsNotNull response
+        } :> System.Threading.Tasks.Task
+
+    [<TestMethod>]
+    member this.VerifyWebhookTest () =
+        task {
+            let publicKeyXml = "<RSAKeyValue><Modulus>v71mKsJJhpfBPluwl2+1ZfGLNtE2EZWyf2UkwF/QGJddycsFoKVpKZZP+LLmrNLZXKJWd7k2tcj/jwKZEbIjpBOMzCTLmiTXNr8aBwgb7FhUX9AQ62jDKvRW7jUTFPkzDTOuLto02iDSUCLGSGpico1MM0uS0NgY9oy9pMZGISBulOXAZ/aFABqpzRsId+JGgHCCPJm/HF6uAp/rbF78VHnzA2GvNUrUXBm0vGiX/JPIc/xhItRpT7IcAM7/RAy6e7kKxak60FK7rQkXTrcXlD/u34644Tuip3Th+9IzALIUahijWJOnO5bSo5CG4jk/qke2m8egkj1ojDO4gxS54JWIdL1SpB6adFoyDYD5FNrnwMmRklSel/sb1hjHPkU+zex8t+i//meC8kOXPh/R65xbOXZlPIEqFz4+M6QSAGQCtAa5GRqiz2vAkcxHQHW07VLYRFUbRYlw4ju4w2PRM7ur+X0iMqdJiBQX6hMJIhiDMWXZvL3XwOooz7D4bk99vIliJ1mB821uER2oRV5FBJhdDq5VfAfXRrZwCrbo8HacTMw9NrN32vN9HGJi7bfm/y8FD9TQnsSV01dfMKayO3K1GbIx54bTy5wufv/n3kd4c2hkga9jRfa2HEFTSkLPkPoHLD8/NRs5j6a5Ua8/qXRJbFQIXhYAme9THhSiUcs=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>"
+            let signature = System.Convert.FromBase64String "hGbwi7tYImp9myQbrhxhLGLlMVV+qoCXlkTrbnn8zhTebyfjcDDWgYZq+WDVnS9323EjVfIuwXN2CMrFnad+EYs2gMAg7deVS+eCTx+xA5hRYeFoDpfR4qR6aj3X14h1Oe8BgHbRL1O938D0qKsNKA1/sxX6+x2fhYcz/svqSddYqhbB3xb7HIeZz+0G10TG4XpnTw+WB9j2jhO2mDQqJikBwloqYtq3mx0V+fXR3EUfdKK3pryLVqXEB0tMwgqp5WUvkL1w8dsd57VFxdWZi62HRQB9c2cArORJmmdpwVkodEiW1l6JHsJECOq0mxKmeo/LxRzMWofbG3TnwW4i7GbOSUy7uZ6aq81s0z/ToeSF53Y0gSueLGib2itG6Iz74M5rmZgih5cIHBfS62M73uIncaY60NiDzkSR3YwZxoN+Dz85B+z86VzRjqKqIV49goIWlhXM8b+GPTwF0DbzbDfkPlPIgcXBM9D/oCg1DdZlZk4C9gky7S9xwbgUE76+N8Slec8J8r9IBPJMgJV80qmF8AwqBEpAe1EZmFJAxGTiqjMIqB26jof6UcqWN3S2nZ77l2P5ZiihvSQXLGFERGapfHNSsLdHZk2+j+dCt22HtCM4guH3yudhIKH1rmVv5NVcemTa9caxHdAz0pkZFTQuP88G/oLuA89DB0XEXv4="
+            let requestBody = """{"Type":"FITestEvent","Version":1,"Payload":"Test","Nonce":1125446983}"""
+            let! isVerified = ClearBank.verifySignature publicKeyXml signature requestBody
+
+            Assert.IsNotNull isVerified
+            Assert.IsTrue isVerified
         } :> System.Threading.Tasks.Task

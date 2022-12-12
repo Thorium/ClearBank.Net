@@ -7,4 +7,5 @@ open ClearBank
 let clearbankPrivateKey = "..."
 let azureKeyVaultName = "myVault"
 let azureKeyVaultCertificateName = "myCert"
-let transferFromAccount = UK_Domestic("04-06-05", "00000001")
+let sortCode = "04-06-05"
+let transferFromAccount = UK_Domestic(sortCode, "00000001")
