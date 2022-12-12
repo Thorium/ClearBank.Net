@@ -239,6 +239,7 @@ type PaymentTransfer = {
     TransactionId: string
 }
 
+/// Creates credit transfer for createPaymentInstruction
 let createCreditTransfer (payment:PaymentTransfer) =
     FpsPaymentsV3.BatchCreditTransfer(
         paymentIdentification = FpsPaymentsV3.BatchPaymentIdentification(
@@ -260,6 +261,7 @@ let createCreditTransfer (payment:PaymentTransfer) =
         )
     )
 
+/// Creates payment instructions from createCreditTransfer for transferPayments
 let createPaymentInstruction address legalEntityIdentifier batchId account transfers =
     let req =
         FpsPaymentsV3.BatchPaymentInstruction(
@@ -274,6 +276,7 @@ let createPaymentInstruction address legalEntityIdentifier batchId account trans
         )
     req
 
+/// Creates a new account
 let createNewAccount config azureKeyVaultCertificateName (requestId:Guid) (sortCode:string) accountName ownerName =
     let req =
         let owner = AccountsV3.PartyIdentification(ownerName)
@@ -310,6 +313,7 @@ let createNewAccount config azureKeyVaultCertificateName (requestId:Guid) (sortC
             return Error(err, details)
     }
 
+/// Get all the accounts
 let getAccounts config =
 
     let httpClient =
@@ -332,6 +336,7 @@ let getAccounts config =
             return Error(err, details)
     }
 
+/// Get all the transactions
 let getTransactions config pageSize pageNumber startDate endDate =
 
     let httpClient =
@@ -354,6 +359,32 @@ let getTransactions config pageSize pageNumber startDate endDate =
             return Error(err, details)
     }
 
+/// Get an transaction with correct end-to-end-id
+/// if you are lucky enough to own accountId (from getAccounts) and transactionId (from getTransactions)
+let getAccountTransaction config (accountId:string) (transactionId:string) =
+
+    let httpClient =
+        if config.LogUnsuccessfulHandler.IsNone then
+            new System.Net.Http.HttpClient(BaseAddress=new Uri(config.BaseUrl))
+        else
+            let handler1 = new HttpClientHandler (UseCookies = false)
+            let handler2 = new ErrorHandler(handler1)
+            new System.Net.Http.HttpClient(handler2, BaseAddress=new Uri(config.BaseUrl))
+    let clientV2 = ClearBankSwaggerV2.Client httpClient
+
+    async {
+        let authToken = "Bearer " + config.PrivateKey
+        let! r = clientV2.V2AccountsByAccountIdTransactionsByTransactionIdGet(accountId, transactionId, authToken) |> Async.Catch
+        httpClient.Dispose()
+        match r with
+        | Choice1Of2 x -> return Ok x
+        | Choice2Of2 err ->
+            let details = getErrorDetails err
+            return Error(err, details)
+    }
+
+
+/// Post payments created with createPaymentInstruction
 let transferPayments config azureKeyVaultCertificateName (requestId:Guid) paymentInstructions =
 
     let req = FpsPaymentsV3.BatchCreateCreditTransferRequest(
