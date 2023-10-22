@@ -18,11 +18,10 @@ type ClearbankConfiguration =
       LogUnsuccessfulHandler: Option<HttpStatusCode*string -> Unit>
     }
 
-[<Struct>]
 type BankAccount =
-| IBAN of IBAN: string
-| BBAN of BBAN: string
-| UK_Domestic of Sortcode_Account: struct(string * string)
+| IBAN of string
+| BBAN of string
+| UK_Domestic of SortCode: string * AccountNumber: string
 
 // Schema: https://institution-api-sim.clearbank.co.uk/docs/index.html
 // FPS, CHAPS

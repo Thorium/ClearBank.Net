@@ -5,7 +5,7 @@
     <TargetFrameworks>netstandard2.1;net472</TargetFrameworks>
     <PackageId>ClearBank.Net</PackageId>
     <AssemblyName>ClearBank.Net</AssemblyName>
-    <Version>1.0.17</Version>
+    <Version>1.0.18</Version>
     <TargetFSharpCoreVersion>7.0.0.0</TargetFSharpCoreVersion>
     <Authors>Tuomas, Simon</Authors>
     <Company>Fund Ourselves</Company>
@@ -14,8 +14,8 @@
         Unofficial .NET client for ClearBank integration, creating online payments via their API.
         Bank payment handling automation in United Kingdom.
     </Description>
-    <RepositoryUrl>https://github.com/Thorium/ClearBank.Net.git</RepositoryUrl> 
-    <RepositoryType>git</RepositoryType>    
+    <RepositoryUrl>https://github.com/Thorium/ClearBank.Net.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>Unlicense</PackageLicenseExpression>
     <IsPackable>true</IsPackable>
     <IsTestProject>false</IsTestProject>
