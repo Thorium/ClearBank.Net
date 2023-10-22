@@ -5,7 +5,8 @@
     <TargetFrameworks>netstandard2.1;net472</TargetFrameworks>
     <PackageId>ClearBank.Net</PackageId>
     <AssemblyName>ClearBank.Net</AssemblyName>
-    <Version>1.0.16</Version>
+    <Version>1.0.17</Version>
+    <TargetFSharpCoreVersion>7.0.0.0</TargetFSharpCoreVersion>
     <Authors>Tuomas, Simon</Authors>
     <Company>Fund Ourselves</Company>
     <PackageTags>ClearBank .NET client clear bank integration payments online payment library transaction api bank uk automation england united-kingdom great-britain hsm banking gateway clearbank</PackageTags>
@@ -28,11 +29,12 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FSharp.Data" Version="6.2" />
-    <PackageReference Include="KeyVaultSigning" Version="1.0.7" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="KeyVaultSigning" Version="1.0.8" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="SwaggerProvider" Version="0.12.2" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="6.0.1" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="6.0.7" />
+    <PackageReference Update="FSharp.Core" Version="7.0.400" />
   </ItemGroup>
 </Project>
