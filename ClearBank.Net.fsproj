@@ -31,7 +31,7 @@
     <PackageReference Include="FSharp.Data" Version="6.2" />
     <PackageReference Include="KeyVaultSigning" Version="1.0.8" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="SwaggerProvider" Version="0.12.2" />
+    <PackageReference Include="SwaggerProvider" Version="2.0.0-theta-003" />
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="6.0.1" />
   </ItemGroup>
   <ItemGroup>

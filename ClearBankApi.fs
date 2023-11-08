@@ -175,8 +175,8 @@ let callTestEndpoint config azureKeyVaultCertificateName =
     async {
 
         let authToken = "Bearer " + config.PrivateKey
-        let payload = Newtonsoft.Json.Linq.JObject.Parse("""{"institutionId": "string","body": "hello world!"}""") |> box
-        let payloaStr = Newtonsoft.Json.JsonConvert.SerializeObject payload
+        let payload = System.Text.Json.JsonDocument.Parse("""{"institutionId": "string","body": "hello world!"}""") |> box
+        let payloaStr = client.Serialize payload
 
         let! signature_bodyhash_string = calculateSignature config azureKeyVaultCertificateName payloaStr |> Async.AwaitTask
         let requestId = Guid.NewGuid().ToString("N")
