@@ -37,7 +37,7 @@ let [<Literal>]schemaV2 = __SOURCE_DIRECTORY__ + @"/clearbank-api-v2.json"
 let [<Literal>]schemaV3Accounts = __SOURCE_DIRECTORY__ + @"/clearbank-api-v3-accounts.json"
 let [<Literal>]schemaV3PaymentsFps = __SOURCE_DIRECTORY__ + @"/fps-initiate-payment-v3.json"
 
-type ClearBankSwaggerV1 = SwaggerClientProvider<schemaV1, PreferAsync=true>
+type internal ClearBankSwaggerV1 = SwaggerClientProvider<schemaV1, PreferAsync=true>
 type ClearBankSwaggerV2 = SwaggerClientProvider<schemaV2, PreferAsync=true>
 type ClearBankOpenApiV3Accounts = OpenApiClientProvider<schemaV3Accounts, PreferAsync=true>
 type FpsPaymentsV3 = OpenApiClientProvider<schemaV3PaymentsFps, PreferAsync=true>
