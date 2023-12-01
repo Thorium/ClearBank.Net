@@ -5,10 +5,11 @@ open System
 type WebHookResponse (nonce:int64) =
     member val Nonce = nonce |> Convert.ToInt32
 
+let internal cbSerializerSettings = Newtonsoft.Json.JsonSerializerSettings(MissingMemberHandling = Newtonsoft.Json.MissingMemberHandling.Error)
+
 /// Creates a plain text response
 let createResponsePlain (nonce:int64) =
-    let serializerSettings = Newtonsoft.Json.JsonSerializerSettings(MissingMemberHandling = Newtonsoft.Json.MissingMemberHandling.Error)
-    Newtonsoft.Json.JsonConvert.SerializeObject(WebHookResponse nonce, serializerSettings)
+    Newtonsoft.Json.JsonConvert.SerializeObject(WebHookResponse nonce, cbSerializerSettings)
 
 /// Creates a valid response that will not escape JSON object strings
 let createResponse config azureKeyVaultCertificateName (request:System.Net.Http.HttpRequestMessage) nonce =
