@@ -199,6 +199,47 @@ type ClearBankPaymentJson = FSharp.Data.JsonProvider<"""[
         }
     },
     "Nonce": 748392098
+},
+{
+  "Type": "InboundHeldTransaction",
+  "Version": 1,
+  "Payload": {
+    "TimestampCreated": "2019-03-01T00:00:00Z",
+    "Scheme": "FasterPayments",
+    "Account": {
+      "BBAN": "CUBK11223312345678",
+      "IBAN": "GB00CUBK11223312345678"
+    },
+    "CounterpartAccount": {
+      "BBAN": "CUBK44556687654321",
+      "IBAN": "GB00CUBK44556687654321"
+    },
+    "TransactionAmount": 88.52,
+    "PaymentReference": "ee9a790ea56c142c6b538916c8bd6bcc",
+    "EndToEndTransactionId": "5e30e0b4bfb0"
+  },
+  "Nonce": 1082937278
+},
+{
+"Type": "OutboundHeldTransaction",
+"Version": 1,
+"Payload":
+{
+  "TimestampCreated": "2019-03-01T00:00:00Z",
+  "Scheme": "FasterPayments",
+  "CounterpartAccount": {
+    "BBAN": "CUBK44556687654321",
+    "IBAN": "GB00CUBK44556687654321"
+},
+  "Account": {
+    "BBAN": "CUBK11223312345678",
+    "IBAN": "GB00CUBK11223312345678"
+},
+  "TransactionAmount": 88.52,
+  "PaymentReference": "a6f3c732a6a0b2a8018a06e10c6ecae2",
+  "EndToEndTransactionId": "b0c50dc87f86"
+},
+  "Nonce": 1089558378
 }
 ]""", SampleIsList=true>
 

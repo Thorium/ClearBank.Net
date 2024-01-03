@@ -36,7 +36,9 @@ type TestClass () =
     let azureKeyVaultCertificateName = TestParameters.azureKeyVaultCertificateName
     let AssertTestResult actual =
         match actual with
-        | Ok _ -> Assert.IsTrue true
+        | Ok res ->
+
+            Assert.IsTrue true
         | Error (err:Exception,details) ->
             Assert.Fail(err.Message + ", " + details)
 
@@ -56,7 +58,7 @@ type TestClass () =
                 {
                     To = UK_Domestic("20-20-15", "55555555")
                     AccountHolder = "Mr Test"
-                    Sum = 123.00m
+                    Sum = 123.10m
                     Currency = "GBP"
                     Description = "Phone Bill"
                     PaymentReference = "123456789" + rnd.Next(1000).ToString()

@@ -247,7 +247,7 @@ let createCreditTransfer (payment:PaymentTransfer) =
                                     payment.TransactionId // endToEndIdentification
                                 ),
 
-        amount = FpsPaymentsV3.BatchAmount(Convert.ToDouble payment.Sum, payment.Currency),
+        amount = FpsPaymentsV3.BatchAmount(Convert.ToDouble(Math.Round(payment.Sum, 2)), payment.Currency),
         creditor = FpsPaymentsV3.BatchCreditorPartyIdentifier(payment.AccountHolder (*, "legalEntityIdentifier"*)),
         creditorAccount = FpsPaymentsV3.BatchPaymentInstructionCounterpartAccount(
             identification = ``account to string`` payment.To),
