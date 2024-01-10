@@ -247,7 +247,7 @@ let createCreditTransfer (payment:PaymentTransfer) =
                                     payment.TransactionId // endToEndIdentification
                                 ),
 
-        amount = FpsPaymentsV3.BatchAmount(Convert.ToDouble(Math.Round(payment.Sum, 2)), payment.Currency),
+        amount = FpsPaymentsV3.BatchAmount(Convert.ToDouble(payment.Sum), payment.Currency),
         creditor = FpsPaymentsV3.BatchCreditorPartyIdentifier(payment.AccountHolder (*, "legalEntityIdentifier"*)),
         creditorAccount = FpsPaymentsV3.BatchPaymentInstructionCounterpartAccount(
             identification = ``account to string`` payment.To),
@@ -383,6 +383,14 @@ let getAccountTransaction config (accountId:string) (transactionId:string) =
             return Error(err, details)
     }
 
+type TwoDecimalsConverter() =
+    inherit System.Text.Json.Serialization.JsonConverter<float>()
+
+    override _.Write(writer: System.Text.Json.Utf8JsonWriter, value, serializer) =
+        writer.WriteRawValue(value.ToString "0.00")
+
+    override _.Read(reader, typeToConvert, options) =
+        failwith "Not implemented"
 
 /// Post payments created with createPaymentInstruction
 let transferPayments config azureKeyVaultCertificateName (requestId:Guid) paymentInstructions =
@@ -398,8 +406,10 @@ let transferPayments config azureKeyVaultCertificateName (requestId:Guid) paymen
             let handler2 = new ErrorHandler(handler1)
             new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
 
-    let client = FpsPaymentsV3.Client httpClient
-
+    let opts = System.Text.Json.JsonSerializerOptions()
+    opts.Converters.Add(TwoDecimalsConverter())
+    let client = FpsPaymentsV3.Client(httpClient, opts)
+    
     async {
 
         let authToken = "Bearer " + config.PrivateKey
