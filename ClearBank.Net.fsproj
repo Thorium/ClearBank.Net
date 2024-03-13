@@ -5,7 +5,7 @@
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
     <PackageId>ClearBank.Net</PackageId>
     <AssemblyName>ClearBank.Net</AssemblyName>
-    <Version>1.0.23</Version>
+    <Version>1.0.24</Version>
     <TargetFSharpCoreVersion>8.0.0.0</TargetFSharpCoreVersion>
     <Authors>Tuomas, Simon</Authors>
     <Company>Fund Ourselves</Company>
@@ -28,7 +28,7 @@
     <Compile Include="WebhookParsing.fs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="FSharp.Data" Version="6.3.0" />
+    <PackageReference Include="FSharp.Data" Version="6.4.0" />
     <PackageReference Include="KeyVaultSigning" Version="1.0.9" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="SwaggerProvider" Version="2.0.1" />
