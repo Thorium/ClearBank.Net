@@ -9,3 +9,4 @@ let azureKeyVaultName = "myVault"
 let azureKeyVaultCertificateName = "myCert"
 let sortCode = "04-06-05"
 let transferFromAccount = UK_Domestic(sortCode, "00000001")
+let clearbankUri = "https://institution-api-sim.clearbank.co.uk/" // test, prod: "https://institution-api.clearbank.co.uk/"

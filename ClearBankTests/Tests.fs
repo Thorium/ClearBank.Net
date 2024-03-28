@@ -16,7 +16,7 @@ type TestClass () =
 
     let clearbankDefaultConfig =
         {
-            BaseUrl = "https://institution-api-sim.clearbank.co.uk/"
+            BaseUrl = TestParameters.clearbankUri
             PrivateKey = TestParameters.clearbankPrivateKey
             AzureKeyVaultName = TestParameters.azureKeyVaultName
             AzureKeyVaultCredentials =
