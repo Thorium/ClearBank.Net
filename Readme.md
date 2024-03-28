@@ -27,6 +27,7 @@ openssl.exe req -new -sha256 -key "c:\temp\downloaded.pem" -out file.csr
 -	Upload that to the portal https://institution-sim.clearbank.co.uk/
 -	Copy the private key (the long string) from the message box. You need that in the config later, as that will be used in POST header `Authorization: Bearer (the long string)`
 
+_Update: You can also get CSR now directly from Azure keyvault, by selecting the certificate and clicking "Certificate Operation" -> "Download CSR"_
 
 ## (4. Optional: Ensure the correctness with FI-API-Signtool)
 
