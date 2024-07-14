@@ -152,7 +152,7 @@ let verifySignatureFromSecret config secretName signature requestBody =
     }
 
 let internal getErrorDetails : Exception -> string = function
-    | :? WebException as wex when wex.Response <> null ->
+    | :? WebException as wex when not(isNull(wex.Response)) ->
         use stream = wex.Response.GetResponseStream()
         use reader = new System.IO.StreamReader(stream)
         let err = reader.ReadToEnd()
