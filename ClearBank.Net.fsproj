@@ -5,7 +5,7 @@
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
     <PackageId>ClearBank.Net</PackageId>
     <AssemblyName>ClearBank.Net</AssemblyName>
-    <Version>1.0.25</Version>
+    <Version>1.0.26</Version>
     <TargetFSharpCoreVersion>8.0.0.0</TargetFSharpCoreVersion>
     <Authors>Tuomas, Simon</Authors>
     <Company>Fund Ourselves</Company>
@@ -31,12 +31,13 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FSharp.Data" Version="6.4.0" />
+    <PackageReference Include="FSharp.Data.JsonProvider.Serializer" Version="1.0.2" />
     <PackageReference Include="KeyVaultSigning" Version="1.0.10" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="SwaggerProvider" Version="2.0.1" />
-    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="6.0.1" />
+    <PackageReference Include="SwaggerProvider" Version="2.1.3" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="8.0.0" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="8.0.200" />
+    <PackageReference Update="FSharp.Core" Version="8.0.301" />
   </ItemGroup>
 </Project>

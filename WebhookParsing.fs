@@ -1,5 +1,6 @@
 module ClearBankWebhooks
 open System
+open FSharp.Data.JsonProvider
 
 [<Sealed>]
 type WebHookResponse (nonce:int64) =
@@ -246,4 +247,4 @@ type ClearBankPaymentJson = FSharp.Data.JsonProvider<"""[
 type ClearBankPayment = ClearBankPaymentJson.Root
 
 let parsePaymentsCall (webhookInput:string) : ClearBankPayment =
-        ClearBankPaymentJson.Parse webhookInput
+        ClearBankPaymentJson.Load (Serializer.Deserialize webhookInput)

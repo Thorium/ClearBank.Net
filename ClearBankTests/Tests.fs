@@ -142,7 +142,8 @@ type TestClass () =
                     "Nonce": 123456789
                 }""" |> ClearBankWebhooks.parsePaymentsCall
 
-            Assert.AreEqual(123456789L, test.Nonce)
+            let nonce = test.Nonce
+            Assert.AreEqual(123456789L, nonce, 0L)
 
             let thisRequest = new System.Net.Http.HttpRequestMessage()
             let! response = ClearBankWebhooks.createResponse clearbankDefaultConfig azureKeyVaultCertificateName thisRequest test.Nonce
