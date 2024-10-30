@@ -2,7 +2,7 @@
 # ClearBank.NET
 
 Unofficial .NET client for ClearBank integration, creating online payments via their API.
-Bank payment handling automation in United Kingdom. Released as a [NuGet package](https://www.nuget.org/packages/ClearBank.Net/).
+Bank payment handling automation in the United Kingdom. Released as a [NuGet package](https://www.nuget.org/packages/ClearBank.Net/).
 This aims to be bare and easy.
 
 Here are the pre-conditions:
@@ -14,7 +14,7 @@ Azure KeyVault supports HSM (hardware security module) backed keys.
 
 ## 2. Configure the Certificate -tab
 
-Use e.g. new self-signed sertificate, but the PEM format has to be selected.
+For example, use a new self-signed certificate, but the PEM format has to be selected.
 
 Download the certificate, a PEM-file.
 
@@ -25,7 +25,7 @@ openssl.exe req -new -sha256 -key "c:\temp\downloaded.pem" -out file.csr
 ```
 
 -	Upload that to the portal https://institution-sim.clearbank.co.uk/
--	Copy the private key (the long string) from the message box. You need that in the config later, as that will be used in POST header `Authorization: Bearer (the long string)`
+-	Copy the private key (the long string) from the message box. You need that in the config later, as that will be used in the POST header `Authorization: Bearer (the long string)`
 
 _Update: You can also get CSR now directly from Azure keyvault, by selecting the certificate and clicking "Certificate Operation" -> "Download CSR"_
 
@@ -103,7 +103,7 @@ If you have problems with the KeyVault authentication, you can change the AzureK
         } : ClearbankConfiguration
 ```
 
-The last `LogUnsuccessfulHandler` property is optional error-logging callback. You could replace it e.g. with `Some logging` and have a function:
+The last `LogUnsuccessfulHandler` property is an optional error-logging callback. You could replace it e.g. with `Some logging` and have a function:
 
 ```fsharp
     let logging(status,content) =
@@ -125,8 +125,8 @@ and `ClearBank.getTransactions` config pageSize pageNumber startDate endDate
 
 ### Webhook responses
 
-For receiving webhooks you have to get a web-server which is out of scope of this library,
-however there are some helper classes provided in this library.
+To receive webhooks, you need a web server, which is outside the scope of this library.
+However, there are some helper classes provided in this library.
 
 To use those, your server code could look something like this:
 
@@ -151,7 +151,7 @@ type CBWebhookController() as this =
 
             // Use parsed.Type to get the webhook type.
             // Different types may have the corresponding end-to-end transactionId in different places.
-            // Fetch your transaction based on that id, and do whatever you want.
+            // Fetch your transaction based on that ID, and do whatever you want.
 
             //    match parsed.Type with
             //    | "TransactionSettled" -> ...
@@ -166,4 +166,4 @@ type CBWebhookController() as this =
         } |> Async.StartAsTask
 ```
 
-To test webhooks you can use e.g. Fiddler to compose them, and https://webhook.site/ to get the their calls.
+To test webhooks, you can use e.g. Fiddler to compose them and https://webhook.site/ to get their calls.
