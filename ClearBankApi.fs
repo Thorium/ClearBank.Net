@@ -28,9 +28,9 @@ type BankAccount =
 
 // Account Holder Name - Required, alpha-numeric, space, comma, full-stop, hyphen (Max 18 characters)
 // Sort code - 6 character length, must be numeric
-// Account Number - required, 8 character length, must be numeric
+// Account Number - required, 8 characters length, must be numeric
 // Amount - required, must be numeric and greater than 0
-// Payment Reference - required, alpha numeric, space, comma, full stop, hyphen, maximum length 18 characters (Description to be provided -if customer exceeds 18 characters this will be truncated)
+// Payment Reference - required, alphanumeric, space, comma, full stop, a hyphen, maximum length 18 characters (Description to be provided -if the customer exceeds 18 characters this will be truncated)
     
 let [<Literal>]schemaV1 = __SOURCE_DIRECTORY__ + @"/clearbank-api-v1.json"
 let [<Literal>]schemaV2 = __SOURCE_DIRECTORY__ + @"/clearbank-api-v2.json"
@@ -359,7 +359,7 @@ let getTransactions config pageSize pageNumber startDate endDate =
             return Error(err, details)
     }
 
-/// Get an transaction with correct end-to-end-id
+/// Get a transaction with correct end-to-end-id
 /// if you are lucky enough to own accountId (from getAccounts) and transactionId (from getTransactions)
 let getAccountTransaction config (accountId:string) (transactionId:string) =
 
