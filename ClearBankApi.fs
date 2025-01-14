@@ -71,7 +71,7 @@ let internal reportUnsuccessfulEvents xRequestId handler =
 /// Possible response values:
 /// Accepted, AccountDisabled, InsufficientFunds, InvalidAccount
 /// InvalidCurrency, Rejected, DebitPaymentDisabled
-type ClearBankErrorJson = FSharp.Data.JsonProvider<"""[{
+type internal ClearBankErrorJson = FSharp.Data.JsonProvider<"""[{
     "transactions": [{
         "endToEndIdentification": "string",
         "response": "Accepted"

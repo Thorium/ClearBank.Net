@@ -30,7 +30,7 @@ let createResponse config azureKeyVaultCertificateName (request:System.Net.Http.
         return response
     }
 
-type ClearBankPaymentJson = FSharp.Data.JsonProvider<"""[
+type internal ClearBankPaymentJson = FSharp.Data.JsonProvider<"""[
 {
     "Type": "TransactionSettled",
     "Version": 6,
@@ -248,3 +248,17 @@ type ClearBankPayment = ClearBankPaymentJson.Root
 
 let parsePaymentsCall (webhookInput:string) : ClearBankPayment =
         ClearBankPaymentJson.Load (Serializer.Deserialize webhookInput)
+
+module WebhookTypes =
+    /// Payment sent successfully.
+    let TransactionSettled = "TransactionSettled"
+    /// Payment has incorrect data, validation failed.
+    let PaymentMessageAssessmentFailed = "PaymentMessageAssessmentFailed"
+    /// Payment has incorrect data, validation failed. Same as PaymentMessageAssessmentFailed but due to typing error, the webhook can return either. 
+    let PaymentMessageAssesmentFailed = "PaymentMessageAssesmentFailed"
+    /// Payment validation failed.
+    let PaymentMessageValidationFailed = "PaymentMessageValidationFailed"
+    /// Payment sent but returned as failed.
+    let TransactionRejected = "TransactionRejected"
+    let InboundHeldTransaction = "InboundHeldTransaction"
+    let OutboundHeldTransaction = "OutboundHeldTransaction"
