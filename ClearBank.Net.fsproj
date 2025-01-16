@@ -30,14 +30,14 @@
     <Compile Include="WebhookParsing.fs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="FSharp.Data" Version="6.4.0" />
+    <PackageReference Include="FSharp.Data" Version="6.4.1" />
     <PackageReference Include="FSharp.Data.JsonProvider.Serializer" Version="1.0.2" />
     <PackageReference Include="KeyVaultSigning" Version="1.0.10" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="SwaggerProvider" Version="2.1.3" />
-    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="8.0.0" />
+    <PackageReference Include="SwaggerProvider" Version="2.2.1" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.1" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="8.0.301" />
+    <PackageReference Update="FSharp.Core" Version="9.0.101" />
   </ItemGroup>
 </Project>
