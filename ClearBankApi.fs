@@ -10,7 +10,7 @@ type KeyVaultCredentials =
 | CredentialsWithOptions of Azure.Identity.DefaultAzureCredentialOptions
 
 type ClearbankConfiguration =
-    { 
+    {
       BaseUrl: string
       PrivateKey: string
       AzureKeyVaultName: string
@@ -31,7 +31,7 @@ type BankAccount =
 // Account Number - required, 8 characters length, must be numeric
 // Amount - required, must be numeric and greater than 0
 // Payment Reference - required, alphanumeric, space, comma, full stop, a hyphen, maximum length 18 characters (Description to be provided -if the customer exceeds 18 characters this will be truncated)
-    
+
 let [<Literal>]schemaV1 = __SOURCE_DIRECTORY__ + @"/clearbank-api-v1.json"
 let [<Literal>]schemaV2 = __SOURCE_DIRECTORY__ + @"/clearbank-api-v2.json"
 let [<Literal>]schemaV3Accounts = __SOURCE_DIRECTORY__ + @"/clearbank-api-v3-accounts.json"
@@ -61,7 +61,7 @@ type ErrorHandler(messageHandler) =
         } |> Async.StartImmediateAsTask
 
 let internal reportUnsuccessfulEvents xRequestId handler =
-    let evt = 
+    let evt =
         unSuccessStatusCode.Publish
         |> Event.filter(fun (id,status,content) -> id = Some xRequestId)
         |> Event.map(fun (id,status,content) -> status, content)
@@ -105,7 +105,7 @@ let parseClearBankErrorContent(content:string) =
     else
 
     try
-        let parsed = 
+        let parsed =
             ClearBankErrorJson.Parse content
         match parsed.Transactions |> Seq.tryHead with
         | Some t -> parsed.Transactions |> Seq.map(fun t -> t.EndToEndIdentification, t.Response) |> ClearBankTransactionError
@@ -123,7 +123,7 @@ type AccountsV3 = ModelsV3Accounts.Binding.Accounts
 let internal setKeyVaultCredentials options =
     match options with
     | DefaultCredentials -> ()
-    | CredentialsWithOptions opts -> 
+    | CredentialsWithOptions opts ->
         KeyVault.configureAzureCredentials <- fun() ->
             Azure.Identity.DefaultAzureCredential opts
 
@@ -131,8 +131,8 @@ let internal calculateSignature config azureKeyVaultCertificateName requestBody 
     task {
         setKeyVaultCredentials config.AzureKeyVaultCredentials
         let! signature_bodyhash = KeyVault.signAsync config.AzureKeyVaultName azureKeyVaultCertificateName requestBody
-        let signature_bodyhash_string = 
-                signature_bodyhash.Signature 
+        let signature_bodyhash_string =
+                signature_bodyhash.Signature
                 |> Convert.ToBase64String
         return signature_bodyhash_string
     }
@@ -151,7 +151,11 @@ let verifySignatureFromSecret config secretName signature requestBody =
         return verifyResult
     }
 
-let internal getErrorDetails : Exception -> string = function
+let rec internal getErrorDetails : Exception -> string = function
+    | :? Swagger.OpenApiException as e ->
+        let content = e.Content.ReadAsStringAsync() |> Async.AwaitTask |> Async.RunSynchronously
+        content
+    | :? AggregateException as aex -> getErrorDetails (aex.GetBaseException())
     | :? WebException as wex when not(isNull(wex.Response)) ->
         use stream = wex.Response.GetResponseStream()
         use reader = new System.IO.StreamReader(stream)
@@ -181,7 +185,7 @@ let callTestEndpoint config azureKeyVaultCertificateName =
         let! signature_bodyhash_string = calculateSignature config azureKeyVaultCertificateName payloaStr |> Async.AwaitTask
         let requestId = Guid.NewGuid().ToString("N")
 
-        let subscription = 
+        let subscription =
             if config.LogUnsuccessfulHandler.IsSome then
                 Some (reportUnsuccessfulEvents requestId config.LogUnsuccessfulHandler.Value)
             else None
@@ -252,8 +256,8 @@ let createCreditTransfer (payment:PaymentTransfer) =
         creditorAccount = FpsPaymentsV3.BatchPaymentInstructionCounterpartAccount(
             identification = ``account to string`` payment.To),
         remittanceInformation =
-            FpsPaymentsV3.BatchRemittanceInformation(structured = 
-                FpsPaymentsV3.BatchStructured(creditorReferenceInformation = 
+            FpsPaymentsV3.BatchRemittanceInformation(structured =
+                FpsPaymentsV3.BatchStructured(creditorReferenceInformation =
                     FpsPaymentsV3.BatchCreditorReferenceInformation(payment.PaymentReference // reference
 
                 )
@@ -298,7 +302,7 @@ let createNewAccount config azureKeyVaultCertificateName (requestId:Guid) (sortC
         let toHash = client.Serialize req
         let! signature_bodyhash_string = calculateSignature config azureKeyVaultCertificateName toHash |> Async.AwaitTask
 
-        let subscription = 
+        let subscription =
             if config.LogUnsuccessfulHandler.IsSome then
                 Some (reportUnsuccessfulEvents requestIdS config.LogUnsuccessfulHandler.Value)
             else None
@@ -409,14 +413,14 @@ let transferPayments config azureKeyVaultCertificateName (requestId:Guid) paymen
     let opts = System.Text.Json.JsonSerializerOptions()
     opts.Converters.Add(TwoDecimalsConverter())
     let client = FpsPaymentsV3.Client(httpClient, opts)
-    
+
     async {
 
         let authToken = "Bearer " + config.PrivateKey
         let toHash = client.Serialize req
         let! signature_bodyhash_string = calculateSignature config azureKeyVaultCertificateName toHash |> Async.AwaitTask
-            
-        let subscription = 
+
+        let subscription =
             if config.LogUnsuccessfulHandler.IsSome then
                 Some (reportUnsuccessfulEvents requestIdS config.LogUnsuccessfulHandler.Value)
             else None
