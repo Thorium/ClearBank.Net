@@ -152,7 +152,7 @@ let verifySignatureFromSecret config secretName signature requestBody =
     }
 
 let rec internal getErrorDetails : Exception -> string = function
-    | :? Swagger.OpenApiException as e ->
+    | :? Swagger.OpenApiException as e when e.Content <> null ->
         let content = e.Content.ReadAsStringAsync() |> Async.AwaitTask |> Async.RunSynchronously
         content
     | :? AggregateException as aex -> getErrorDetails (aex.GetBaseException())
