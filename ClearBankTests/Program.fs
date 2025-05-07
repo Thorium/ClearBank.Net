@@ -3,7 +3,7 @@ module Program =
     [<EntryPoint>]
     let main _ =
         task {
-            let t = ClearBankTests.TestClass()
+            let t = ClearBankTests.GBPTests()
             do! t.TestMethodPassingTest()
             do! t.ProcessPaymentsTest()
             //do! t.CreateAccountTest()

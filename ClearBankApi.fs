@@ -23,6 +23,8 @@ type BankAccount =
 | BBAN of string
 | UK_Domestic of SortCode: string * AccountNumber: string
 
+// Dev portal: https://clearbank.github.io/uk
+
 // Schema: https://institution-api-sim.clearbank.co.uk/docs/index.html
 // FPS, CHAPS
 
@@ -437,3 +439,144 @@ let transferPayments config azureKeyVaultCertificateName (requestId:Guid) paymen
             //printfn "Used signature: %s" signature_bodyhash_string
             return Error(err, details)
     }
+
+module MultiCurrency =
+
+    let [<Literal>]schemaMultiCurrencyTransactions = __SOURCE_DIRECTORY__ + @"/mccy-transactions-v1.json"
+    let [<Literal>]schemaMultiCurrencyPayments = __SOURCE_DIRECTORY__ + @"/mccy-payments-v1.json"
+
+    type MccyTransactionsV1 = OpenApiClientProvider<schemaMultiCurrencyTransactions, PreferAsync=true>
+    type MccyPaymentsV1 = OpenApiClientProvider<schemaMultiCurrencyPayments, PreferAsync=true>
+
+    type AccountKind = GeneralSegregated | DesignatedSegregated | GeneralClient | DesignatedClient | YourFunds
+
+    let ISOCurrencySymbols() =
+        System.Globalization.CultureInfo.GetCultures(System.Globalization.CultureTypes.SpecificCultures)
+        |> Array.map(fun ci -> ci.Name) |> Array.distinct |> Array.map(fun cid -> System.Globalization.RegionInfo cid)
+        |> Array.map(fun g -> g.ISOCurrencySymbol) |> Array.distinct
+
+    /// Creates a new account
+    let createNewAccount config azureKeyVaultCertificateName (requestId:Guid) (sortCode:MccyTransactionsV1.RoutingCode) accountName ownerName (accountKind:AccountKind) isoCurrencySymbols identifiers productId customerId =
+        let sortCode = MccyTransactionsV1.RoutingCode(sortCode.Code.Replace("-", ""), sortCode.Kind)
+        let req =
+            MccyTransactionsV1.CreateAccountRequest(accountName, ownerName, (accountKind.ToString()), isoCurrencySymbols, sortCode, identifiers, productId, customerId)
+        let requestIdS = requestId.ToString("N") //todo, unique, save to db
+
+        let httpClient =
+            if config.LogUnsuccessfulHandler.IsNone then
+                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+            else
+                let handler1 = new HttpClientHandler (UseCookies = false)
+                let handler2 = new ErrorHandler(handler1)
+                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+        let client = MccyTransactionsV1.Client httpClient
+
+        async {
+
+            let authToken = "Bearer " + config.PrivateKey
+            let toHash = client.Serialize req
+            let! signature_bodyhash_string = calculateSignature config azureKeyVaultCertificateName toHash |> Async.AwaitTask
+
+            let subscription =
+                if config.LogUnsuccessfulHandler.IsSome then
+                    Some (reportUnsuccessfulEvents requestIdS config.LogUnsuccessfulHandler.Value)
+                else None
+
+            let! r = client.PostMccyV1Accounts(authToken, signature_bodyhash_string, requestIdS, req) |> Async.Catch
+            httpClient.Dispose()
+            if subscription.IsSome then
+                subscription.Value.Dispose()
+            match r with
+            | Choice1Of2 x -> return Ok x
+            | Choice2Of2 err ->
+                let details = getErrorDetails err
+                return Error(err, details)
+        }
+
+    /// Get all the accounts
+    let getAccounts config =
+
+        let httpClient =
+            if config.LogUnsuccessfulHandler.IsNone then
+                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+            else
+                let handler1 = new HttpClientHandler (UseCookies = false)
+                let handler2 = new ErrorHandler(handler1)
+                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+        let client = MccyTransactionsV1.Client httpClient
+
+        async {
+            let authToken = "Bearer " + config.PrivateKey
+            let! r = client.GetMccyV1Accounts(authToken) |> Async.Catch
+            httpClient.Dispose()
+            match r with
+            | Choice1Of2 x -> return Ok x
+            | Choice2Of2 err ->
+                let details = getErrorDetails err
+                return Error(err, details)
+        }
+
+    /// Get all the transactions
+    let getTransactions config accountId isoCurrecyCode pageSize pageNumber startDate endDate =
+
+        let httpClient =
+            if config.LogUnsuccessfulHandler.IsNone then
+                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+            else
+                let handler1 = new HttpClientHandler (UseCookies = false)
+                let handler2 = new ErrorHandler(handler1)
+                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+        let client = MccyTransactionsV1.Client httpClient
+
+        async {
+            let authToken = "Bearer " + config.PrivateKey
+            let! r = client.GetMccyV1AccountTransactions(authToken, accountId, isoCurrecyCode, pageNumber, pageSize, startDate, endDate) |> Async.Catch
+            httpClient.Dispose()
+            match r with
+            | Choice1Of2 x -> return Ok x
+            | Choice2Of2 err ->
+                let details = getErrorDetails err
+                return Error(err, details)
+        }
+
+    /// Post payments created with createPaymentInstruction
+    let transferPayments config azureKeyVaultCertificateName isoCurrencyCode batchId paymentInstructions =
+
+        let req = MccyPaymentsV1.PaymentRequest(isoCurrencyCode, batchId, paymentInstructions)
+            
+        let requestIdS = batchId.ToString()
+        let httpClient =
+            if config.LogUnsuccessfulHandler.IsNone then
+                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+            else
+                let handler1 = new HttpClientHandler (UseCookies = false)
+                let handler2 = new ErrorHandler(handler1)
+                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+
+        let opts = System.Text.Json.JsonSerializerOptions()
+        opts.Converters.Add(TwoDecimalsConverter())
+        let client = MccyPaymentsV1.Client(httpClient, opts)
+
+        async {
+
+            let authToken = "Bearer " + config.PrivateKey
+            let toHash = client.Serialize req
+            let! signature_bodyhash_string = calculateSignature config azureKeyVaultCertificateName toHash |> Async.AwaitTask
+
+            let subscription =
+                if config.LogUnsuccessfulHandler.IsSome then
+                    Some (reportUnsuccessfulEvents requestIdS config.LogUnsuccessfulHandler.Value)
+                else None
+            let! r = client.PostV1MccyPayments(req) |> Async.Catch
+            httpClient.Dispose()
+            if subscription.IsSome then
+                subscription.Value.Dispose()
+            match r with
+            | Choice1Of2 x -> return Ok x
+            | Choice2Of2 err ->
+                // You can use Fiddler to see the Request
+
+                let details = getErrorDetails err
+                //printfn "Used signature: %s" signature_bodyhash_string
+                return Error(err, details)
+        }

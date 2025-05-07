@@ -4,8 +4,9 @@ open ClearBank
 open System
 open Microsoft.VisualStudio.TestTools.UnitTesting
 
-[<TestClass>]
-type TestClass () =
+[<AutoOpen>]
+module TestHelpers =
+
     let rnd = new System.Random()
     let logging(status,content) =
         match parseClearBankErrorContent content with
@@ -41,6 +42,9 @@ type TestClass () =
             Assert.IsTrue true
         | Error (err:Exception,details) ->
             Assert.Fail(err.Message + ", " + details)
+
+[<TestClass>]
+type GBPTests () =
 
     [<TestMethod>]
     member this.TestMethodPassingTest () =
@@ -161,4 +165,37 @@ type TestClass () =
 
             Assert.IsNotNull isVerified
             Assert.IsTrue isVerified
+        } :> System.Threading.Tasks.Task
+
+[<TestClass>]
+type MultiCurrencyTests () =
+
+    [<TestMethod>]
+    member this.GetAccountsTest () =
+        task {
+            let! actual = ClearBank.MultiCurrency.getAccounts clearbankDefaultConfig
+            match actual with
+            | Ok x ->
+                let accounts =
+                    x.Accounts
+                    |> Array.map (fun a ->
+                        $"{a.Name} %A{a.Currencies} status {a.Status}: {a.StatusInformation}")
+
+                Assert.AreNotEqual(0, accounts.Length)
+                Assert.AreNotEqual("",accounts.[0])
+                Assert.AreNotEqual("",String.Join("\r\n", accounts))
+ 
+            | Error (err:Exception,details) ->
+                Assert.Fail(err.Message + ", " + details)
+        } :> System.Threading.Tasks.Task
+
+
+    [<TestMethod>]
+    member this.CreateAccountTest () =
+        task {
+            let sortCode = MultiCurrency.MccyTransactionsV1.RoutingCode(TestParameters.sortCode, "SortCode")
+            let! actual = ClearBank.MultiCurrency.createNewAccount clearbankDefaultConfig azureKeyVaultCertificateName (Guid.NewGuid()) sortCode "Test currency account" "Mr Account Tester"
+                                                                   MultiCurrency.AccountKind.GeneralSegregated [|"EUR"; "USD"|] Array.empty None None
+
+            AssertTestResult actual
         } :> System.Threading.Tasks.Task
