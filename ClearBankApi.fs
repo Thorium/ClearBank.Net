@@ -34,6 +34,8 @@ type BankAccount =
 // Amount - required, must be numeric and greater than 0
 // Payment Reference - required, alphanumeric, space, comma, full stop, a hyphen, maximum length 18 characters (Description to be provided -if the customer exceeds 18 characters this will be truncated)
 
+
+// Schemas: https://github.com/clearbank/clearbank.github.io/tree/main/data/endpoints
 let [<Literal>]schemaV1 = __SOURCE_DIRECTORY__ + @"/clearbank-api-v1.json"
 let [<Literal>]schemaV2 = __SOURCE_DIRECTORY__ + @"/clearbank-api-v2.json"
 let [<Literal>]schemaV3Accounts = __SOURCE_DIRECTORY__ + @"/clearbank-api-v3-accounts.json"
@@ -443,7 +445,7 @@ let transferPayments config azureKeyVaultCertificateName (requestId:Guid) paymen
 module MultiCurrency =
 
     let [<Literal>]schemaMultiCurrencyTransactions = __SOURCE_DIRECTORY__ + @"/mccy-transactions-v1.json"
-    let [<Literal>]schemaMultiCurrencyPayments = __SOURCE_DIRECTORY__ + @"/mccy-payments-v1.json"
+    let [<Literal>]schemaMultiCurrencyPayments = __SOURCE_DIRECTORY__ + @"/mccy-initiate-payment-v1-dec21.json"
 
     type MccyTransactionsV1 = OpenApiClientProvider<schemaMultiCurrencyTransactions, PreferAsync=true>
     type MccyPaymentsV1 = OpenApiClientProvider<schemaMultiCurrencyPayments, PreferAsync=true>
@@ -539,12 +541,80 @@ module MultiCurrency =
                 return Error(err, details)
         }
 
-    /// Post payments created with createPaymentInstruction
-    let transferPayments config azureKeyVaultCertificateName isoCurrencyCode batchId paymentInstructions =
 
-        let req = MccyPaymentsV1.PaymentRequest(isoCurrencyCode, batchId, paymentInstructions)
+    type InternationalPaymentTransfer = {
+        To: BankAccount
+        AccountHolder: MccyPaymentsV1.Creditor
+        Sum: decimal
+        Currency: string
+        Description: string
+        PaymentReference: string
+        TransactionId: string
+    }
+
+    ///// Creates credit transfer for createPaymentInstruction
+    //let createPaymentInstruction (payment:PaymentTransfer) =
+    //    MccyPaymentsV1.PaymentRequestItem(
+    //        payment.TransactionId, payment.PaymentReference, Convert.ToSingle(payment.Sum),
+    //        payment.AccountHolder,
+    //            ), payment.AccountHolder,
+    //        MccyPaymentsV1.PaymentRequestItem_DebtorAddress(),
+    //        MccyPaymentsV1.AccountIdentifier(), payment.Currency)
+
+
+        //    paymentIdentification = FpsPaymentsV3.BatchPaymentIdentification(
+        //                                payment.Description, // instructionIdentification
+        //                                payment.TransactionId // endToEndIdentification
+        //                            ),
+
+        //    amount = FpsPaymentsV3.BatchAmount(Convert.ToDouble(payment.Sum), payment.Currency),
+        //    creditor = FpsPaymentsV3.BatchCreditorPartyIdentifier(payment.AccountHolder (*, "legalEntityIdentifier"*)),
+        //    creditorAccount = FpsPaymentsV3.BatchPaymentInstructionCounterpartAccount(
+        //        identification = ``account to string`` payment.To),
+        //    remittanceInformation =
+        //        FpsPaymentsV3.BatchRemittanceInformation(structured =
+        //            FpsPaymentsV3.BatchStructured(creditorReferenceInformation =
+        //                FpsPaymentsV3.BatchCreditorReferenceInformation(payment.PaymentReference // reference
+
+        //            )
+        //        )
+        //    )
+
+        /// Creates payment instructions from createCreditTransfer for transferPayments
+
+        //let createPaymentInstruction address legalEntityIdentifier batchId account transfers =
+
+        //let createPaymentInstruction (address:MccyPaymentsV1.PaymentRequestItem_DebtorAddress) legalEntityIdentifier batchId account transfers =
+
+        //    let req =
+
+        //        MccyPaymentsV1.PaymentRequestItem(
+        //            payment.TransactionId, payment.PaymentReference, Convert.ToSingle(payment.Sum),
+        //            payment.AccountHolder, address
+        //                ), payment.AccountHolder,
+        //            MccyPaymentsV1.PaymentRequestItem_DebtorAddress(),
+        //            MccyPaymentsV1.AccountIdentifier(), payment.Currency)
+
+
+        //        //MccyPaymentsV1.PaymentRequestItem(
+        //        //    debtor = FpsPaymentsV3.BatchDebtorPartyIdentifier(
+        //        //        address = address,
+        //        //        legalEntityIdentifier = (legalEntityIdentifier |> Option.defaultValue "")),
+        //        //    paymentInstructionIdentification = batchId,
+        //        //    debtorAccount = FpsPaymentsV3.BatchPaymentInstructionCounterpartAccount(
+        //        //        identification = ``account to string`` account
+        //        //        ),
+        //        //    creditTransfers = transfers
+        //        //)
+        //    req
+
+
+    /// Post payments created with createPaymentInstruction
+    let transferPayments config azureKeyVaultCertificateName (requestId:Guid) batchId isoCurrencyCode paymentInstructions =
+
+        let req = MccyPaymentsV1.PaymentRequest(isoCurrencyCode, paymentInstructions, batchId)
             
-        let requestIdS = batchId.ToString()
+        let requestIdS = requestId.ToString("N")
         let httpClient =
             if config.LogUnsuccessfulHandler.IsNone then
                 new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
@@ -567,7 +637,7 @@ module MultiCurrency =
                 if config.LogUnsuccessfulHandler.IsSome then
                     Some (reportUnsuccessfulEvents requestIdS config.LogUnsuccessfulHandler.Value)
                 else None
-            let! r = client.PostV1MccyPayments(req) |> Async.Catch
+            let! r = client.PostV1MccyPayments(authToken, signature_bodyhash_string, requestIdS, req) |> Async.Catch
             httpClient.Dispose()
             if subscription.IsSome then
                 subscription.Value.Dispose()

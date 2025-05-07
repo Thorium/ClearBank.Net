@@ -199,3 +199,112 @@ type MultiCurrencyTests () =
 
             AssertTestResult actual
         } :> System.Threading.Tasks.Task
+
+    [<TestMethod>]
+    member this.ProcessPaymentsTest () =
+        task {
+            let expected = Ok ()
+
+            let currency =  "EUR" // ClearBank.MultiCurrency.ISOCurrencySymbols()
+
+            let xreq = Guid.NewGuid()
+            let batchId = Some (Guid.NewGuid())
+
+            // todo:
+            // - figure out what information is actually needed to make a working multi-currency payment.
+            // - remove half of the stuff.
+
+            let creditor = 
+                MultiCurrency.MccyPaymentsV1.Creditor(
+                    "John",
+                    MultiCurrency.MccyPaymentsV1.Creditor_Address(
+                        "Street 1", "Street 2", "77000", "Finland", "Line 3"
+                    ),
+                    "NDEAFIHH", // BIC
+                    MultiCurrency.MccyPaymentsV1.Creditor_Identification(
+                        MultiCurrency.MccyPaymentsV1.Creditor_Identification_OrganisationIdentification(
+                            MultiCurrency.MccyPaymentsV1.Creditor_Identification_OrganisationIdentification_Other(
+                                "identification",
+                                MultiCurrency.MccyPaymentsV1.Creditor_Identification_OrganisationIdentification_Other_SchemeName("code", "proprietary"),
+                                "issuer")
+                        ),
+                        MultiCurrency.MccyPaymentsV1.Creditor_Identification_PrivateIdentification(
+                            MultiCurrency.MccyPaymentsV1.Creditor_Identification_PrivateIdentification_DateAndPlaceOfBirth( (Some (DateTimeOffset(DateTime(1970,01,01)))), "Kuopio", "Finland"),
+                            MultiCurrency.MccyPaymentsV1.Creditor_Identification_PrivateIdentification_Other(
+                                "identification",
+                                MultiCurrency.MccyPaymentsV1.Creditor_Identification_PrivateIdentification_Other_SchemeName("code", "proprietary")
+                            )
+                        )
+                    ),
+                    "Finland", // country of residence
+                    MultiCurrency.MccyPaymentsV1.Creditor_ContactDetails("John", "john@mailinator.com"),
+                    "iban", "accountnumber", MultiCurrency.MccyPaymentsV1.Creditor_SchemeName("code", "proprietary")
+                )
+            let ultimateCreditor =
+                MultiCurrency.MccyPaymentsV1.UltimateCreditor(
+                        "John",
+                        MultiCurrency.MccyPaymentsV1.UltimateCreditor_Address("Finland", "Street 1", "Street 2", "Street 3", "77000"),
+                        "BIC", 
+                        MultiCurrency.MccyPaymentsV1.UltimateCreditor_Identification(
+                            MultiCurrency.MccyPaymentsV1.UltimateCreditor_Identification_OrganisationIdentification(
+                                MultiCurrency.MccyPaymentsV1.UltimateCreditor_Identification_OrganisationIdentification_Other(
+                                    "identification",
+                                    MultiCurrency.MccyPaymentsV1.UltimateCreditor_Identification_OrganisationIdentification_Other_SchemeName("code", "proprietary"),
+                                    "issuer"
+                                )
+                            ),
+                            MultiCurrency.MccyPaymentsV1.UltimateCreditor_Identification_PrivateIdentification(
+                                MultiCurrency.MccyPaymentsV1.UltimateCreditor_Identification_PrivateIdentification_DateAndPlaceOfBirth( (Some (DateTimeOffset(DateTime(1970,01,01)))), "Kuopio", "Finland"),
+                                MultiCurrency.MccyPaymentsV1.UltimateCreditor_Identification_PrivateIdentification_Other(
+                                    "identification",
+                                    MultiCurrency.MccyPaymentsV1.UltimateCreditor_Identification_PrivateIdentification_Other_SchemeName("code", "proprietary")
+                                )
+
+                            )
+                        )
+                    )
+
+            let instructions =
+                MultiCurrency.MccyPaymentsV1.PaymentRequestItem(
+                    ("123456789" + rnd.Next(10000).ToString()), // endToEndId
+                    ("123456789" + rnd.Next(1000).ToString()), // paymentReference
+                    Convert.ToSingle(123.00m), //sum
+                    creditor,
+                    "Jim Doe", //deptor name
+                    MultiCurrency.MccyPaymentsV1.PaymentRequestItem_DebtorAddress(
+                        "Street 1", "Street 2", "77000", "Finland", "Line 3"
+                    ),
+                    MultiCurrency.MccyPaymentsV1.AccountIdentifier("kind", "accountnumber"),
+                    "EUR",
+                    "debtorBic",
+                    MultiCurrency.MccyPaymentsV1.PaymentRequestItem_DebtorPrivateIdentification(
+                            MultiCurrency.MccyPaymentsV1.PaymentRequestItem_DebtorPrivateIdentification_DateAndPlaceOfBirth( (Some (DateTimeOffset(DateTime(1970,01,01)))), "Kuopio", "Finland"),
+                            MultiCurrency.MccyPaymentsV1.PaymentRequestItem_DebtorPrivateIdentification_Other(
+                                "identification",
+                                    MultiCurrency.MccyPaymentsV1.PaymentRequestItem_DebtorPrivateIdentification_Other_SchemeName("code", "proprietary")
+                                )
+                        ),
+                    MultiCurrency.MccyPaymentsV1.IntermediaryAgent(
+                        MultiCurrency.MccyPaymentsV1.IntermediaryAgent_FinancialInstitutionIdentification(
+                            MultiCurrency.MccyPaymentsV1.IntermediaryAgent_FinancialInstitutionIdentification_AddressDetails("Finland", "Street 1", "Street 2", "Street 3", "77000"),
+                            "bic", "aba", "name")
+                        ),
+                    MultiCurrency.MccyPaymentsV1.CreditorAgent(
+                        MultiCurrency.MccyPaymentsV1.CreditorAgent_FinancialInstitutionIdentification(
+                            "Some bank name",
+                            MultiCurrency.MccyPaymentsV1.CreditorAgent_FinancialInstitutionIdentification_AddressDetails(
+                                "Finland", "Street 1", "Street 2", "Street 3", "77000"
+                            )
+                            ,"BIC", "aba","clearing system id code", "memberId"
+                        ),
+                        "Branch id"
+                    ),
+                    "instructionsForAgent",
+                    MultiCurrency.MccyPaymentsV1.Purpose("code", "proprietary"),
+                    MultiCurrency.MccyPaymentsV1.RemittanceInformation("Additional info"),
+                    ultimateCreditor)
+
+            
+            let! actual = ClearBank.MultiCurrency.transferPayments clearbankDefaultConfig azureKeyVaultCertificateName xreq batchId currency [| instructions |]
+            AssertTestResult actual
+        } :> System.Threading.Tasks.Task
