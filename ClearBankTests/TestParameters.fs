@@ -2,7 +2,7 @@
 /// you have to configure these test-parameters for your environment
 module TestParameters
 
-open ClearBank
+open ClearBank.Common
 
 let clearbankPrivateKey = "..."
 let azureKeyVaultName = "myVault"

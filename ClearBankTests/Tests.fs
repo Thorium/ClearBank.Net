@@ -1,11 +1,12 @@
 namespace ClearBankTests
 
-open ClearBank
 open System
 open Microsoft.VisualStudio.TestTools.UnitTesting
 
 [<AutoOpen>]
 module TestHelpers =
+
+    open ClearBank.Common
 
     let rnd = new System.Random()
     let logging(status,content) =
@@ -44,12 +45,12 @@ module TestHelpers =
             Assert.Fail(err.Message + ", " + details)
 
 [<TestClass>]
-type GBPTests () =
+type ``UK Tests`` () =
 
     [<TestMethod>]
     member this.TestMethodPassingTest () =
         task {
-            let! actual = callTestEndpoint clearbankDefaultConfig azureKeyVaultCertificateName 
+            let! actual = ClearBank.UK.callTestEndpoint clearbankDefaultConfig azureKeyVaultCertificateName 
             AssertTestResult actual
         } :> System.Threading.Tasks.Task
 
@@ -58,46 +59,48 @@ type GBPTests () =
         task {
             let expected = Ok ()
 
-            let target1 = 
-                {
-                    To = UK_Domestic("20-20-15", "55555555")
-                    AccountHolder = "Mr Test"
-                    Sum = 123.10m
-                    Currency = "GBP"
-                    Description = "Phone Bill"
-                    PaymentReference = "123456789" + rnd.Next(1000).ToString()
-                    TransactionId = "123456789" + rnd.Next(10000).ToString()
-                } |> ClearBank.createCreditTransfer
+            let target1 =
+                ClearBank.UK.createCreditTransfer
+                    {
+                        To = ClearBank.Common.UK_Domestic("20-20-15", "55555555")
+                        AccountHolder = "Mr Test"
+                        Sum = 123.10m
+                        Currency = "GBP"
+                        Description = "Phone Bill"
+                        PaymentReference = "123456789" + rnd.Next(1000).ToString()
+                        TransactionId = "123456789" + rnd.Next(10000).ToString()
+                    }
 
             let target2 = 
-                {
-                    To = UK_Domestic("40-47-84", "70872490")
-                    AccountHolder = "John Doe"
-                    Sum = 123.00m
-                    Currency = "GBP"
-                    Description = "Some money"
-                    PaymentReference = "12345" + rnd.Next(1000).ToString()
-                    TransactionId = "12345" + rnd.Next(10000).ToString() // End-to-end: You identify corresponding webhooks with this.
-                } |> ClearBank.createCreditTransfer
+                ClearBank.UK.createCreditTransfer
+                    {
+                        To = ClearBank.Common.UK_Domestic("40-47-84", "70872490")
+                        AccountHolder = "John Doe"
+                        Sum = 123.00m
+                        Currency = "GBP"
+                        Description = "Some money"
+                        PaymentReference = "12345" + rnd.Next(1000).ToString()
+                        TransactionId = "12345" + rnd.Next(10000).ToString() // End-to-end: You identify corresponding webhooks with this.
+                    }
 
             let xreq = Guid.NewGuid()
             let batchId = "Batch123" + rnd.Next(1000).ToString()
-            let instructions = ClearBank.createPaymentInstruction "1 Test Street, Teston TE57 1NG" None batchId TestParameters.transferFromAccount [| target1; target2 |]
-            let! actual = ClearBank.transferPayments clearbankDefaultConfig azureKeyVaultCertificateName xreq [| instructions |]
+            let instructions = ClearBank.UK.createPaymentInstruction "1 Test Street, Teston TE57 1NG" None batchId TestParameters.transferFromAccount [| target1; target2 |]
+            let! actual = ClearBank.UK.transferPayments clearbankDefaultConfig azureKeyVaultCertificateName xreq [| instructions |]
             AssertTestResult actual
         } :> System.Threading.Tasks.Task
 
     [<TestMethod>]
     member this.CreateAccountTest () =
         task {
-            let! actual = ClearBank.createNewAccount clearbankDefaultConfig azureKeyVaultCertificateName (Guid.NewGuid()) TestParameters.sortCode "Test account" "Mr Account Tester" 
+            let! actual = ClearBank.UK.createNewAccount clearbankDefaultConfig azureKeyVaultCertificateName (Guid.NewGuid()) TestParameters.sortCode "Test account" "Mr Account Tester" 
             AssertTestResult actual
         } :> System.Threading.Tasks.Task
 
     [<TestMethod>]
     member this.GetAccountsTest () =
         task {
-            let! actual = ClearBank.getAccounts clearbankDefaultConfig
+            let! actual = ClearBank.UK.getAccounts clearbankDefaultConfig
             match actual with
             | Ok x ->
                 let accountBalances =
@@ -118,7 +121,7 @@ type GBPTests () =
     [<TestMethod>]
     member this.GetTransactionsTest () =
         task {
-            let! actual = ClearBank.getTransactions clearbankDefaultConfig (Some 1000) None None None
+            let! actual = ClearBank.UK.getTransactions clearbankDefaultConfig (Some 1000) None None None
             match actual with
             | Ok x ->
                 let transactions =
@@ -144,13 +147,13 @@ type GBPTests () =
                     "Version": 6,
                     "Payload": {},
                     "Nonce": 123456789
-                }""" |> ClearBankWebhooks.parsePaymentsCall
+                }""" |> ClearBank.Webhooks.parsePaymentsCallUK
 
             let nonce = test.Nonce
             Assert.AreEqual(123456789L, nonce, 0L)
 
             let thisRequest = new System.Net.Http.HttpRequestMessage()
-            let! response = ClearBankWebhooks.createResponse clearbankDefaultConfig azureKeyVaultCertificateName thisRequest test.Nonce
+            let! response = ClearBank.Webhooks.createResponse clearbankDefaultConfig azureKeyVaultCertificateName thisRequest test.Nonce
 
             Assert.IsNotNull response
         } :> System.Threading.Tasks.Task
@@ -161,19 +164,21 @@ type GBPTests () =
             let publicKeyXml = "<RSAKeyValue><Modulus>v71mKsJJhpfBPluwl2+1ZfGLNtE2EZWyf2UkwF/QGJddycsFoKVpKZZP+LLmrNLZXKJWd7k2tcj/jwKZEbIjpBOMzCTLmiTXNr8aBwgb7FhUX9AQ62jDKvRW7jUTFPkzDTOuLto02iDSUCLGSGpico1MM0uS0NgY9oy9pMZGISBulOXAZ/aFABqpzRsId+JGgHCCPJm/HF6uAp/rbF78VHnzA2GvNUrUXBm0vGiX/JPIc/xhItRpT7IcAM7/RAy6e7kKxak60FK7rQkXTrcXlD/u34644Tuip3Th+9IzALIUahijWJOnO5bSo5CG4jk/qke2m8egkj1ojDO4gxS54JWIdL1SpB6adFoyDYD5FNrnwMmRklSel/sb1hjHPkU+zex8t+i//meC8kOXPh/R65xbOXZlPIEqFz4+M6QSAGQCtAa5GRqiz2vAkcxHQHW07VLYRFUbRYlw4ju4w2PRM7ur+X0iMqdJiBQX6hMJIhiDMWXZvL3XwOooz7D4bk99vIliJ1mB821uER2oRV5FBJhdDq5VfAfXRrZwCrbo8HacTMw9NrN32vN9HGJi7bfm/y8FD9TQnsSV01dfMKayO3K1GbIx54bTy5wufv/n3kd4c2hkga9jRfa2HEFTSkLPkPoHLD8/NRs5j6a5Ua8/qXRJbFQIXhYAme9THhSiUcs=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>"
             let signature = System.Convert.FromBase64String "hGbwi7tYImp9myQbrhxhLGLlMVV+qoCXlkTrbnn8zhTebyfjcDDWgYZq+WDVnS9323EjVfIuwXN2CMrFnad+EYs2gMAg7deVS+eCTx+xA5hRYeFoDpfR4qR6aj3X14h1Oe8BgHbRL1O938D0qKsNKA1/sxX6+x2fhYcz/svqSddYqhbB3xb7HIeZz+0G10TG4XpnTw+WB9j2jhO2mDQqJikBwloqYtq3mx0V+fXR3EUfdKK3pryLVqXEB0tMwgqp5WUvkL1w8dsd57VFxdWZi62HRQB9c2cArORJmmdpwVkodEiW1l6JHsJECOq0mxKmeo/LxRzMWofbG3TnwW4i7GbOSUy7uZ6aq81s0z/ToeSF53Y0gSueLGib2itG6Iz74M5rmZgih5cIHBfS62M73uIncaY60NiDzkSR3YwZxoN+Dz85B+z86VzRjqKqIV49goIWlhXM8b+GPTwF0DbzbDfkPlPIgcXBM9D/oCg1DdZlZk4C9gky7S9xwbgUE76+N8Slec8J8r9IBPJMgJV80qmF8AwqBEpAe1EZmFJAxGTiqjMIqB26jof6UcqWN3S2nZ77l2P5ZiihvSQXLGFERGapfHNSsLdHZk2+j+dCt22HtCM4guH3yudhIKH1rmVv5NVcemTa9caxHdAz0pkZFTQuP88G/oLuA89DB0XEXv4="
             let requestBody = """{"Type":"FITestEvent","Version":1,"Payload":"Test","Nonce":1125446983}"""
-            let! isVerified = ClearBank.verifySignature publicKeyXml signature requestBody
+            let! isVerified = ClearBank.Common.verifySignature publicKeyXml signature requestBody
 
             Assert.IsNotNull isVerified
             Assert.IsTrue isVerified
         } :> System.Threading.Tasks.Task
 
+type UKM = ClearBank.UK.MultiCurrency.MccyPaymentsV1
+
 [<TestClass>]
-type MultiCurrencyTests () =
+type ``UK MultiCurrency Tests`` () =
 
     [<TestMethod>]
     member this.GetAccountsTest () =
         task {
-            let! actual = ClearBank.MultiCurrency.getAccounts clearbankDefaultConfig
+            let! actual = ClearBank.UK.MultiCurrency.getAccounts clearbankDefaultConfig
             match actual with
             | Ok x ->
                 let accounts =
@@ -193,9 +198,9 @@ type MultiCurrencyTests () =
     [<TestMethod>]
     member this.CreateAccountTest () =
         task {
-            let sortCode = MultiCurrency.MccyTransactionsV1.RoutingCode(TestParameters.sortCode, "SortCode")
-            let! actual = ClearBank.MultiCurrency.createNewAccount clearbankDefaultConfig azureKeyVaultCertificateName (Guid.NewGuid()) sortCode "Test currency account" "Mr Account Tester"
-                                                                   MultiCurrency.AccountKind.GeneralSegregated [|"EUR"; "USD"|] Array.empty None None
+            let sortCode = ClearBank.UK.MultiCurrency.MccyTransactionsV1.RoutingCode(TestParameters.sortCode, "SortCode")
+            let! actual = ClearBank.UK.MultiCurrency.createNewAccount clearbankDefaultConfig azureKeyVaultCertificateName (Guid.NewGuid()) sortCode "Test currency account" "Mr Account Tester"
+                                                           ClearBank.UK.MultiCurrency.AccountKind.GeneralSegregated [|"EUR"; "USD"|] Array.empty None None
 
             AssertTestResult actual
         } :> System.Threading.Tasks.Task
@@ -215,49 +220,49 @@ type MultiCurrencyTests () =
             // - remove half of the stuff.
 
             let creditor = 
-                MultiCurrency.MccyPaymentsV1.Creditor(
+                UKM.Creditor(
                     "John",
-                    MultiCurrency.MccyPaymentsV1.Creditor_Address(
+                    UKM.Creditor_Address(
                         "Street 1", "Street 2", "77000", "Finland", "Line 3"
                     ),
                     "NDEAFIHH", // BIC
-                    MultiCurrency.MccyPaymentsV1.Creditor_Identification(
-                        MultiCurrency.MccyPaymentsV1.Creditor_Identification_OrganisationIdentification(
-                            MultiCurrency.MccyPaymentsV1.Creditor_Identification_OrganisationIdentification_Other(
+                    UKM.Creditor_Identification(
+                        UKM.Creditor_Identification_OrganisationIdentification(
+                            UKM.Creditor_Identification_OrganisationIdentification_Other(
                                 "identification",
-                                MultiCurrency.MccyPaymentsV1.Creditor_Identification_OrganisationIdentification_Other_SchemeName("code", "proprietary"),
+                                UKM.Creditor_Identification_OrganisationIdentification_Other_SchemeName("code", "proprietary"),
                                 "issuer")
                         ),
-                        MultiCurrency.MccyPaymentsV1.Creditor_Identification_PrivateIdentification(
-                            MultiCurrency.MccyPaymentsV1.Creditor_Identification_PrivateIdentification_DateAndPlaceOfBirth( (Some (DateTimeOffset(DateTime(1970,01,01)))), "Kuopio", "Finland"),
-                            MultiCurrency.MccyPaymentsV1.Creditor_Identification_PrivateIdentification_Other(
+                        UKM.Creditor_Identification_PrivateIdentification(
+                            UKM.Creditor_Identification_PrivateIdentification_DateAndPlaceOfBirth( (Some (DateTimeOffset(DateTime(1970,01,01)))), "Kuopio", "Finland"),
+                            UKM.Creditor_Identification_PrivateIdentification_Other(
                                 "identification",
-                                MultiCurrency.MccyPaymentsV1.Creditor_Identification_PrivateIdentification_Other_SchemeName("code", "proprietary")
+                                UKM.Creditor_Identification_PrivateIdentification_Other_SchemeName("code", "proprietary")
                             )
                         )
                     ),
                     "Finland", // country of residence
-                    MultiCurrency.MccyPaymentsV1.Creditor_ContactDetails("John", "john@mailinator.com"),
-                    "iban", "accountnumber", MultiCurrency.MccyPaymentsV1.Creditor_SchemeName("code", "proprietary")
+                    UKM.Creditor_ContactDetails("John", "john@mailinator.com"),
+                    "iban", "accountnumber", UKM.Creditor_SchemeName("code", "proprietary")
                 )
             let ultimateCreditor =
-                MultiCurrency.MccyPaymentsV1.UltimateCreditor(
+                UKM.UltimateCreditor(
                         "John",
-                        MultiCurrency.MccyPaymentsV1.UltimateCreditor_Address("Finland", "Street 1", "Street 2", "Street 3", "77000"),
+                        UKM.UltimateCreditor_Address("Finland", "Street 1", "Street 2", "Street 3", "77000"),
                         "BIC", 
-                        MultiCurrency.MccyPaymentsV1.UltimateCreditor_Identification(
-                            MultiCurrency.MccyPaymentsV1.UltimateCreditor_Identification_OrganisationIdentification(
-                                MultiCurrency.MccyPaymentsV1.UltimateCreditor_Identification_OrganisationIdentification_Other(
+                        UKM.UltimateCreditor_Identification(
+                            UKM.UltimateCreditor_Identification_OrganisationIdentification(
+                                UKM.UltimateCreditor_Identification_OrganisationIdentification_Other(
                                     "identification",
-                                    MultiCurrency.MccyPaymentsV1.UltimateCreditor_Identification_OrganisationIdentification_Other_SchemeName("code", "proprietary"),
+                                    UKM.UltimateCreditor_Identification_OrganisationIdentification_Other_SchemeName("code", "proprietary"),
                                     "issuer"
                                 )
                             ),
-                            MultiCurrency.MccyPaymentsV1.UltimateCreditor_Identification_PrivateIdentification(
-                                MultiCurrency.MccyPaymentsV1.UltimateCreditor_Identification_PrivateIdentification_DateAndPlaceOfBirth( (Some (DateTimeOffset(DateTime(1970,01,01)))), "Kuopio", "Finland"),
-                                MultiCurrency.MccyPaymentsV1.UltimateCreditor_Identification_PrivateIdentification_Other(
+                            UKM.UltimateCreditor_Identification_PrivateIdentification(
+                                UKM.UltimateCreditor_Identification_PrivateIdentification_DateAndPlaceOfBirth( (Some (DateTimeOffset(DateTime(1970,01,01)))), "Kuopio", "Finland"),
+                                UKM.UltimateCreditor_Identification_PrivateIdentification_Other(
                                     "identification",
-                                    MultiCurrency.MccyPaymentsV1.UltimateCreditor_Identification_PrivateIdentification_Other_SchemeName("code", "proprietary")
+                                    UKM.UltimateCreditor_Identification_PrivateIdentification_Other_SchemeName("code", "proprietary")
                                 )
 
                             )
@@ -265,34 +270,34 @@ type MultiCurrencyTests () =
                     )
 
             let instructions =
-                MultiCurrency.MccyPaymentsV1.PaymentRequestItem(
+                UKM.PaymentRequestItem(
                     ("123456789" + rnd.Next(10000).ToString()), // endToEndId
                     ("123456789" + rnd.Next(1000).ToString()), // paymentReference
                     Convert.ToSingle(123.00m), //sum
                     creditor,
                     "Jim Doe", //deptor name
-                    MultiCurrency.MccyPaymentsV1.PaymentRequestItem_DebtorAddress(
+                    UKM.PaymentRequestItem_DebtorAddress(
                         "Street 1", "Street 2", "77000", "Finland", "Line 3"
                     ),
-                    MultiCurrency.MccyPaymentsV1.AccountIdentifier("kind", "accountnumber"),
+                    UKM.AccountIdentifier("kind", "accountnumber"),
                     "EUR",
                     "debtorBic",
-                    MultiCurrency.MccyPaymentsV1.PaymentRequestItem_DebtorPrivateIdentification(
-                            MultiCurrency.MccyPaymentsV1.PaymentRequestItem_DebtorPrivateIdentification_DateAndPlaceOfBirth( (Some (DateTimeOffset(DateTime(1970,01,01)))), "Kuopio", "Finland"),
-                            MultiCurrency.MccyPaymentsV1.PaymentRequestItem_DebtorPrivateIdentification_Other(
+                    UKM.PaymentRequestItem_DebtorPrivateIdentification(
+                            UKM.PaymentRequestItem_DebtorPrivateIdentification_DateAndPlaceOfBirth( (Some (DateTimeOffset(DateTime(1970,01,01)))), "Kuopio", "Finland"),
+                            UKM.PaymentRequestItem_DebtorPrivateIdentification_Other(
                                 "identification",
-                                    MultiCurrency.MccyPaymentsV1.PaymentRequestItem_DebtorPrivateIdentification_Other_SchemeName("code", "proprietary")
+                                    UKM.PaymentRequestItem_DebtorPrivateIdentification_Other_SchemeName("code", "proprietary")
                                 )
                         ),
-                    MultiCurrency.MccyPaymentsV1.IntermediaryAgent(
-                        MultiCurrency.MccyPaymentsV1.IntermediaryAgent_FinancialInstitutionIdentification(
-                            MultiCurrency.MccyPaymentsV1.IntermediaryAgent_FinancialInstitutionIdentification_AddressDetails("Finland", "Street 1", "Street 2", "Street 3", "77000"),
+                    UKM.IntermediaryAgent(
+                        UKM.IntermediaryAgent_FinancialInstitutionIdentification(
+                            UKM.IntermediaryAgent_FinancialInstitutionIdentification_AddressDetails("Finland", "Street 1", "Street 2", "Street 3", "77000"),
                             "bic", "aba", "name")
                         ),
-                    MultiCurrency.MccyPaymentsV1.CreditorAgent(
-                        MultiCurrency.MccyPaymentsV1.CreditorAgent_FinancialInstitutionIdentification(
+                    UKM.CreditorAgent(
+                        UKM.CreditorAgent_FinancialInstitutionIdentification(
                             "Some bank name",
-                            MultiCurrency.MccyPaymentsV1.CreditorAgent_FinancialInstitutionIdentification_AddressDetails(
+                            UKM.CreditorAgent_FinancialInstitutionIdentification_AddressDetails(
                                 "Finland", "Street 1", "Street 2", "Street 3", "77000"
                             )
                             ,"BIC", "aba","clearing system id code", "memberId"
@@ -300,11 +305,11 @@ type MultiCurrencyTests () =
                         "Branch id"
                     ),
                     "instructionsForAgent",
-                    MultiCurrency.MccyPaymentsV1.Purpose("code", "proprietary"),
-                    MultiCurrency.MccyPaymentsV1.RemittanceInformation("Additional info"),
+                    UKM.Purpose("code", "proprietary"),
+                    UKM.RemittanceInformation("Additional info"),
                     ultimateCreditor)
 
             
-            let! actual = ClearBank.MultiCurrency.transferPayments clearbankDefaultConfig azureKeyVaultCertificateName xreq batchId currency [| instructions |]
+            let! actual = ClearBank.UK.MultiCurrency.transferPayments clearbankDefaultConfig azureKeyVaultCertificateName xreq batchId currency [| instructions |]
             AssertTestResult actual
         } :> System.Threading.Tasks.Task

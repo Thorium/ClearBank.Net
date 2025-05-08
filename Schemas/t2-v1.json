@@ -1,0 +1,1615 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+        "title": "ClearBank.Target2.Orchestrator.Api",
+        "contact": {
+            "name": "API Support",
+            "url": "https://clear.bank",
+            "email": "fiapisupport@clear.bank"
+          },
+        "version": "1.0-T2"
+    },
+    "paths": {
+        "/payments/t2-rtgs/v1/institution-payments": {
+            "post": {
+                "tags": [
+                    "T2-RTGS Institution Payment"
+                ],
+                "description": "This endpoint will send a T2 institution payment (pacs.009).",
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "Your API Token, retrieved from the web portal.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "DigitalSignature",
+                        "in": "header",
+                        "description": "Signed hash of the body of the request. The hash is signed by your private key.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Request-Id",
+                        "in": "header",
+                        "description": "A unique identifier for the request; valid for 24 hours, max length 83.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InstitutionPayments.InstitutionPaymentRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InstitutionPayments.InstitutionPaymentResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Microsoft.AspNetCore.Mvc.ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/payments/t2-rtgs/v1/payment-returns": {
+            "post": {
+                "tags": [
+                    "T2-RTGS Payment Return"
+                ],
+                "description": "This endpoint will send a payment return request (pacs.004).",
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "Your API Token, retrieved from the web portal.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "DigitalSignature",
+                        "in": "header",
+                        "description": "Signed hash of the body of the request. The hash is signed by your private key.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Request-Id",
+                        "in": "header",
+                        "description": "A unique identifier for the request; valid for 24 hours, max length 83.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PaymentReturns.PaymentReturnRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaymentReturns.PaymentReturnResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Microsoft.AspNetCore.Mvc.ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Microsoft.AspNetCore.Mvc.ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/payments/t2-rtgs/v1/customer-payments": {
+            "post": {
+                "tags": [
+                    "T2-RTGS Customer Payment"
+                ],
+                "description": "This endpoint will send a T2 customer payment (pacs.008).",
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "Your API Token, retrieved from the web portal.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "DigitalSignature",
+                        "in": "header",
+                        "description": "Signed hash of the body of the request. The hash is signed by your private key.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Request-Id",
+                        "in": "header",
+                        "description": "A unique identifier for the request; valid for 24 hours, max length 83.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CustomerPayments.CustomerPaymentRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CustomerPayments.CustomerPaymentsResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Microsoft.AspNetCore.Mvc.ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "CustomerPayments.Agent": {
+                "required": [
+                    "bicfi",
+                    "name",
+                    "postalAddress"
+                ],
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "minLength": 1,
+                        "maxLength": 140,
+                        "type": "string",
+                        "description": "Name of the party"
+                    },
+                    "postalAddress": {
+                        "$ref": "#/components/schemas/CustomerPayments.BasicAddress"
+                    },
+                    "bicfi": {
+                        "minLength": 11,
+                        "maxLength": 11,
+                        "pattern": "[A-Z0-9]{4,4}[A-Z]{2,2}[A-Z0-9]{2,2}[A-Z0-9]{3,3}",
+                        "type": "string",
+                        "description": "Financial Institution's Bank Identifier Code (BIC)."
+                    },
+                    "lei": {
+                        "type": "string",
+                        "description": "Legal Entity Identifier of the party",
+                        "maxLength": 20,
+                        "minLength": 20,
+                        "pattern": "[A-Z0-9]{18,18}[0-9]{2,2}"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "CustomerPayments.BasicAddress": {
+                "required": [
+                    "country",
+                    "townName"
+                ],
+                "type": "object",
+                "properties": {
+                    "townName": {
+                        "maxLength": 35,
+                        "minLength": 1,
+                        "type": "string",
+                        "description": "Name of a built-up area, with defined boundaries, and a local government.",
+                        "pattern": "[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]](|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+ !#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]{1,33}[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]])"
+                    },
+                    "country": {
+                        "maxLength": 2,
+                        "minLength": 2,
+                        "type": "string",
+                        "description": "Nation with its own government."
+                    }
+                },
+                "additionalProperties": false
+            },
+            "CustomerPayments.CreditorAgent": {
+                "required": [
+                    "bicfi"
+                ],
+                "type": "object",
+                "properties": {
+                    "bicfi": {
+                        "minLength": 11,
+                        "maxLength": 11,
+                        "pattern": "[A-Z0-9]{4,4}[A-Z]{2,2}[A-Z0-9]{2,2}[A-Z0-9]{3,3}",
+                        "type": "string",
+                        "description": "Financial Institution's Bank Identifier Code (BIC)."
+                    }
+                },
+                "additionalProperties": false
+            },
+            "CustomerPayments.CurrencyAmount": {
+                "required": [
+                    "amount",
+                    "currency"
+                ],
+                "type": "object",
+                "properties": {
+                    "amount": {
+                        "type": "number",
+                        "format": "double",
+                        "description": "Indicates the amount used in a given transaction or account balance."
+                    },
+                    "currency": {
+                        "minLength": 3,
+                        "maxLength": 3,
+                        "type": "string",
+                        "description": "The three-letter ISO currency code for the new currency to be supported by the account. Set to 'EUR' as other currencies are not supported."
+                    }
+                },
+                "additionalProperties": false,
+                "description": "A number of monetary units specified in an active or a historic currency where the unit of currency is explicit and compliant with ISO 4217."
+            },
+            "CustomerPayments.CustomerPaymentRequest": {
+                "required": [
+                    "creditor",
+                    "creditorAccount",
+                    "creditorAgent",
+                    "debtor",
+                    "debtorAccount",
+                    "endToEndIdentification",
+                    "instructionIdentification",
+                    "interbankSettlementAmount",
+                    "sourceAccount",
+                    "uetr"
+                ],
+                "type": "object",
+                "properties": {
+                    "sourceAccount": {
+                        "$ref": "#/components/schemas/CustomerPayments.SourceAccount",
+                        "description": "The ClearBank account that will be debited based on the successful completion of the payment instruction."
+                    },
+                    "creditor": {
+                        "$ref": "#/components/schemas/CustomerPayments.PartyInformation",
+                        "description": "The name and, optionally, the legal entity identifier of the account."
+                    },
+                    "creditorAccount": {
+                        "$ref": "#/components/schemas/IbanOrOtherAccount",
+                        "description": "The creditor's bank account number. You must provide a value for the Iban OR the nonIban field."
+                    },
+                    "creditorAgent": {
+                        "$ref": "#/components/schemas/CustomerPayments.CreditorAgent",
+                        "description": "Information that identifies the creditor agent as a financial institution."
+                    },
+                    "debtor": {
+                        "$ref": "#/components/schemas/CustomerPayments.PartyInformation",
+                        "description": "Details about the account holder."
+                    },
+                    "debtorAccount": {
+                        "$ref": "#/components/schemas/CustomerPayments.IbanAccount",
+                        "description": "Unambiguous identification of the account of the debtor to which a debit entry will be made as a result of the transaction."
+                    },
+                    "endToEndIdentification": {
+                        "description": "Unique identification, as assigned by the initiating party, to unambiguously identify the transaction. This identification is passed on, unchanged, throughout the entire end-to-end chain.",
+                        "minLength": 1,
+                        "maxLength": 35,
+                        "pattern": "[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+](|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+]|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+ ]{1,33}[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+])",
+                        "type": "string"
+                    },
+                    "instructionIdentification": {
+                        "description": "Unique identification, as assigned by an instructing party for an instructed party, to unambiguously identify the instruction.",
+                        "minLength": 1,
+                        "maxLength": 35,
+                        "pattern": "[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+](|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+]|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+ ]{1,33}[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+])",
+                        "type": "string"
+                    },
+                    "uetr": {
+                        "type": "string",
+                        "pattern": "[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}",
+                        "format": "uuid",
+                        "description": "Universally unique identifier to provide an end-to-end reference of a payment transaction."
+                    },
+                    "interbankSettlementAmount": {
+                        "$ref": "#/components/schemas/CustomerPayments.CurrencyAmount"
+                    },
+                    "exchangeRate": {
+                        "description": "Exchange rate applied to convert the currency of the source amount or OriginalCurrency (prior to deduction of charges) to EUR. Note: If the original payment is in euro, this field should be populated with `1`, or not be used.",
+                        "example": 1,
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "instructedAmount": {
+                        "description": "Amount of money to be moved between the debtor and creditor, before deduction of charges, expressed in the original currency as ordered by the initiating party.",
+                        "$ref": "#/components/schemas/CustomerPayments.CurrencyAmount"
+                    },
+                    "previousInstructingAgents": {
+                        "description": "Agents who were previously involved with the payment.",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CustomerPayments.PreviousInstructingAgent"
+                        }
+                    },
+                    "initiatingParty": {
+                        "description": "Information about the party that holds the initating payment account.",
+                        "$ref": "#/components/schemas/CustomerPayments.PartyInformation"
+                    },
+                    "ultimateCreditor": {
+                        "description": "Information about the ultimate creditor of the transaction.",
+                        "$ref": "#/components/schemas/CustomerPayments.PartyInformation"
+                    },
+                    "ultimateDebtor": {
+                        "description": "Information about the ultimate debtor of the transaction (the party holding the ultimate debtor account).",
+                        "$ref": "#/components/schemas/CustomerPayments.PartyInformation"
+                    },
+                    "purpose": {
+                        "description": "Underlying reason for the payment transaction, as published in an external purpose code list.",
+                        "type": "string"
+                    },
+                    "remittanceInformationUnstructured": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 140,
+                        "pattern": "[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]](|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+ !#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]{1,138}[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]])",
+                        "description": "Information supplied to enable the matching of an entry with the items that the transfer is intended to settle, such as commercial invoices in an accounts receivable system, in an unstructured form."
+                    }
+                },
+                "additionalProperties": false
+            },
+            "CustomerPayments.CustomerPaymentsResponse": {
+                "type": "object",
+                "properties": {
+                    "paymentId": {
+                        "type": "string"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "CustomerPayments.DateAndPlaceOfBirth": {
+                "required": [
+                    "birthDate",
+                    "cityOfBirth",
+                    "countryOfBirth"
+                ],
+                "type": "object",
+                "properties": {
+                    "birthDate": {
+                        "pattern": "\\d{4}\\-(0[1-9]|1[012])\\-(0[1-9]|[12][0-9]|3[01])",
+                        "type": "string",
+                        "description": "Party's date of birth."
+                    },
+                    "cityOfBirth": {
+                        "maxLength": 35,
+                        "minLength": 1,
+                        "type": "string",
+                        "description": "Party's city of birth.",
+                        "pattern": "[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]](|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+ !#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]{1,33}[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]])"
+                    },
+                    "countryOfBirth": {
+                        "minLength": 2,
+                        "maxLength": 2,
+                        "type": "string",
+                        "description": "Two-letter ISO country code for the party's country of birth."
+                    },
+                    "provinceOfBirth": {
+                        "maxLength": 35,
+                        "minLength": 1,
+                        "type": "string",
+                        "description": "Party's province of birth.",
+                        "pattern": "[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]](|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+ !#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]{1,33}[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]])"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "IbanOrOtherAccount": {
+                "type": "object",
+                "properties": {
+                    "iban": {
+                        "maxLength": 34,
+                        "minLength": 5,
+                        "pattern": "[A-Z]{2,2}[0-9]{2,2}[a-zA-Z0-9]{1,30}",
+                        "type": "string",
+                        "description": "International Bank Account Number (IBAN) - identifier used internationally by financial institutions to uniquely identify the account of a customer.\r\nFurther specifications of the format and content of the IBAN can be found in the standard ISO 13616 \"Banking and related financial services - International Bank Account Number (IBAN)\" version 1997-10-01, or later revisions."
+                    },
+                    "nonIban": {
+                        "type": "string",
+                        "pattern": "^[0-9a-zA-Z/\\-\\?:\\(\\)\\.,'\\+](|[0-9a-zA-Z/\\-\\?:\\(\\)\\.,'\\+]|[0-9a-zA-Z/\\-\\?:\\(\\)\\.,'\\+ ]{1,32}[0-9a-zA-Z/\\-\\?:\\(\\)\\.,'\\+])\\z",
+                        "maxLength": 34,
+                        "minLength": 1,
+                        "nullable": true,
+                        "description": "Non-IBAN account identifier - to be used when IBAN is not available for the creditor."
+                    }
+                },
+                "additionalProperties": false
+            },
+            "CustomerPayments.IbanAccount": {
+                "required": [
+                    "iban"
+                ],
+                "type": "object",
+                "properties": {
+                    "iban": {
+                        "minLength": 5,
+                        "maxLength": 34,
+                        "pattern": "[A-Z]{2,2}[0-9]{2,2}[a-zA-Z0-9]{1,30}",
+                        "type": "string",
+                        "description": "International Bank Account Number (IBAN) - identifier used internationally by financial institutions to uniquely identify the account of a customer. Further specifications of the format and content of the IBAN can be found in the standard ISO 13616 \"Banking and related financial services - International Bank Account Number (IBAN)\" version 1997-10-01, or later revisions."
+                    }
+                },
+                "additionalProperties": false
+            },
+            "CustomerPayments.OrganisationIdentification": {
+                "type": "object",
+                "properties": {
+                    "anyBic": {
+                        "maxLength": 11,
+                        "minLength": 11,
+                        "type": "string",
+                        "pattern": "[A-Z0-9]{4,4}[A-Z]{2,2}[A-Z0-9]{2,2}[A-Z0-9]{3,3}",
+                        "description": "A BIC assigned by SWIFT to a non financial institution."
+                    },
+                    "lei": {
+                        "maxLength": 20,
+                        "minLength": 20,
+                        "type": "string",
+                        "pattern": "[A-Z0-9]{18,18}[0-9]{2,2}",
+                        "description": "Legal Entity Identifier of the party"
+                    },
+                    "other": {
+                        "minItems": 1,
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CustomerPayments.Other"
+                        }
+                    }
+                },
+                "additionalProperties": false
+            },
+            "CustomerPayments.Other": {
+                "required": [
+                    "identification"
+                ],
+                "type": "object",
+                "properties": {
+                    "identification": {
+                        "maxLength": 35,
+                        "minLength": 1,
+                        "type": "string",
+                        "pattern": "[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+](|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+]|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+ ]{1,33}[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+])",
+                        "description": "Unambiguous Identification for the given scheme."
+                    },
+                    "schemeName": {
+                        "maxLength": 4,
+                        "minLength": 1,
+                        "type": "string",
+                        "description": "Scheme type."
+                    },
+                    "issuer": {
+                        "maxLength": 35,
+                        "minLength": 1,
+                        "type": "string",
+                        "description": "The name of the entity that assigns the identification.",
+                        "pattern": "[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+](|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+]|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+ ]{1,33}[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+])"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "CustomerPayments.PartyInformation": {
+                "required": [
+                    "name",
+                    "postalAddress"
+                ],
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "maxLength": 140,
+                        "minLength": 1,
+                        "type": "string",
+                        "description": "Name of the party",
+                        "pattern": "[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]](|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+ !#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]{1,138}[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]])"
+                    },
+                    "postalAddress": {
+                        "$ref": "#/components/schemas/CustomerPayments.PostalAddress"
+                    },
+                    "countryOfResidence": {
+                        "maxLength": 2,
+                        "minLength": 2,
+                        "description": "The party's country of residence",
+                        "type": "string"
+                    },
+                    "organisationIdentification": {
+                        "$ref": "#/components/schemas/CustomerPayments.OrganisationIdentification",
+                        "description": "Information about the organisation."
+                    },
+                    "privateIdentification": {
+                        "$ref": "#/components/schemas/CustomerPayments.PrivateIdentification",
+                        "description": "The party’s private or personal information."
+                    }
+                },
+                "additionalProperties": false
+            },
+            "CustomerPayments.PostalAddress": {
+                "required": [
+                    "country",
+                    "postCode",
+                    "townName"
+                ],
+                "type": "object",
+                "properties": {
+                    "postCode": {
+                        "maxLength": 16,
+                        "minLength": 1,
+                        "type": "string",
+                        "pattern": "[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]](|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+ !#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]{1,14}[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]])",
+                        "description": "Identifier consisting of a group of letters and/or numbers that is added to a postal address to assist the sorting of mail."
+                    },
+                    "townName": {
+                        "maxLength": 35,
+                        "minLength": 1,
+                        "type": "string",
+                        "pattern": "[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]](|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+ !#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]{1,33}[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]])",
+                        "description": "Name of a built-up area, with defined boundaries, and a local government."
+                    },
+                    "country": {
+                        "maxLength": 2,
+                        "minLength": 2,
+                        "type": "string",
+                        "description": "Nation with its own government."
+                    }
+                },
+                "additionalProperties": false
+            },
+            "CustomerPayments.PreviousInstructingAgent": {
+                "required": [
+                    "agent",
+                    "order"
+                ],
+                "type": "object",
+                "properties": {
+                    "order": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "agent": {
+                        "description": "The financial institution involved with the payment.",
+                        "$ref": "#/components/schemas/CustomerPayments.Agent"
+                    },
+                    "agentAccount": {
+                        "description": "The account of that financial institution.",
+                        "$ref": "#/components/schemas/CustomerPayments.PreviousInstructingAgentAccount"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "CustomerPayments.PreviousInstructingAgentAccount": {
+                "required": [
+                    "iban"
+                ],
+                "type": "object",
+                "properties": {
+                    "iban": {
+                        "minLength": 5,
+                        "maxLength": 34,
+                        "pattern": "[A-Z]{2,2}[0-9]{2,2}[a-zA-Z0-9]{1,30}",
+                        "type": "string",
+                        "description": "International Bank Account Number (IBAN) - identifier used internationally by financial institutions to uniquely identify the account of a customer. Further specifications of the format and content of the IBAN can be found in the standard ISO 13616 \"Banking and related financial services - International Bank Account Number (IBAN)\" version 1997-10-01, or later revisions."
+                    }
+                },
+                "additionalProperties": false
+            },
+            "CustomerPayments.PrivateIdentification": {
+                "type": "object",
+                "properties": {
+                    "dateAndPlaceOfBirth": {
+                        "$ref": "#/components/schemas/CustomerPayments.DateAndPlaceOfBirth"
+                    },
+                    "other": {
+                        "minItems": 1,
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CustomerPayments.Other"
+                        }
+                    }
+                },
+                "additionalProperties": false
+            },
+            "CustomerPayments.SourceAccount": {
+                "required": [
+                    "bicfi",
+                    "iban"
+                ],
+                "type": "object",
+                "properties": {
+                    "bicfi": {
+                        "minLength": 11,
+                        "maxLength": 11,
+                        "pattern": "[A-Z0-9]{4,4}[A-Z]{2,2}[A-Z0-9]{2,2}[A-Z0-9]{3,3}",
+                        "type": "string",
+                        "description": "Financial Institution's Bank Identifier Code (BIC)."
+                    },
+                    "iban": {
+                        "minLength": 5,
+                        "maxLength": 34,
+                        "pattern": "[A-Z]{2,2}[0-9]{2,2}[a-zA-Z0-9]{1,30}",
+                        "type": "string",
+                        "description": "International Bank Account Number (IBAN) - identifier used internationally by financial institutions to uniquely identify the account of a customer. Further specifications of the format and content of the IBAN can be found in the standard ISO 13616 \"Banking and related financial services - International Bank Account Number (IBAN)\" version 1997-10-01, or later revisions."
+                    }
+                },
+                "additionalProperties": false
+            },
+            "ForwardPaymentReturn.ForwardPaymentReturnRequest": {
+                "required": [
+                    "account"
+                ],
+                "type": "object",
+                "properties": {
+                    "account": {
+                        "$ref": "#/components/schemas/ForwardPaymentReturn.IbanAccount"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "ForwardPaymentReturn.IbanAccount": {
+                "required": [
+                    "iban"
+                ],
+                "type": "object",
+                "properties": {
+                    "iban": {
+                        "minLength": 5,
+                        "maxLength": 34,
+                        "pattern": "[A-Z]{2,2}[0-9]{2,2}[a-zA-Z0-9]{1,30}",
+                        "type": "string"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "InstitutionPayments.Agent": {
+                "required": [
+                    "bicfi",
+                    "name",
+                    "postalAddress"
+                ],
+                "type": "object",
+                "properties": {
+                    "lei": {
+                        "maxLength": 20,
+                        "minLength": 20,
+                        "pattern": "[A-Z0-9]{18,18}[0-9]{2,2}",
+                        "type": "string",
+                        "description": "Legal Entity Identifier of the party"
+                    },
+                    "name": {
+                        "minLength": 1,
+                        "maxLength": 140,
+                        "type": "string",
+                        "description": "Name of the party"
+                    },
+                    "postalAddress": {
+                        "$ref": "#/components/schemas/InstitutionPayments.PostalAddress"
+                    },
+                    "bicfi": {
+                        "minLength": 11,
+                        "maxLength": 11,
+                        "pattern": "[A-Z0-9]{4,4}[A-Z]{2,2}[A-Z0-9]{2,2}[A-Z0-9]{3,3}",
+                        "type": "string",
+                        "description": "Financial Institution's Bank Identifier Code (BIC)."
+                    }
+                },
+                "additionalProperties": false
+            },
+            "InstitutionPayments.CreditorAgent": {
+                "required": [
+                    "bicfi"
+                ],
+                "type": "object",
+                "properties": {
+                    "bicfi": {
+                        "minLength": 11,
+                        "maxLength": 11,
+                        "pattern": "[A-Z0-9]{4,4}[A-Z]{2,2}[A-Z0-9]{2,2}[A-Z0-9]{3,3}",
+                        "type": "string",
+                        "description": "Financial Institution's Bank Identifier Code (BIC)."
+                    }
+                },
+                "additionalProperties": false
+            },
+            "InstitutionPayments.FinancialInstitutionId": {
+                "required": [
+                    "bicfi",
+                    "name",
+                    "postalAddress"
+                ],
+                "type": "object",
+                "properties": {
+                    "lei": {
+                        "maxLength": 20,
+                        "minLength": 20,
+                        "pattern": "[A-Z0-9]{18,18}[0-9]{2,2}",
+                        "type": "string",
+                        "description": "Legal Entity Identifier of the party"
+                    },
+                    "name": {
+                        "minLength": 1,
+                        "maxLength": 140,
+                        "type": "string",
+                        "description": "Name of the party"
+                    },
+                    "postalAddress": {
+                        "$ref": "#/components/schemas/InstitutionPayments.PostalAddress"
+                    },
+                    "bicfi": {
+                        "minLength": 11,
+                        "maxLength": 11,
+                        "pattern": "[A-Z0-9]{4,4}[A-Z]{2,2}[A-Z0-9]{2,2}[A-Z0-9]{3,3}",
+                        "type": "string",
+                        "description": "Financial Institution's Bank Identifier Code (BIC)."
+                    }
+                },
+                "additionalProperties": false
+            },
+            "InstitutionPayments.IbanAccount": {
+                "required": [
+                    "iban"
+                ],
+                "type": "object",
+                "properties": {
+                    "iban": {
+                        "minLength": 5,
+                        "maxLength": 34,
+                        "pattern": "[A-Z]{2,2}[0-9]{2,2}[a-zA-Z0-9]{1,30}",
+                        "type": "string",
+                        "description": "International Bank Account Number (IBAN) - identifier used internationally by financial institutions to uniquely identify the account of a customer. Further specifications of the format and content of the IBAN can be found in the standard ISO 13616 \"Banking and related financial services - International Bank Account Number (IBAN)\" version 1997-10-01, or later revisions."
+                    }
+                },
+                "additionalProperties": false
+            },
+            "InstitutionPayments.InstitutionPaymentRequest": {
+                "required": [
+                    "creditor",
+                    "creditorAccount",
+                    "creditorAgent",
+                    "debtor",
+                    "debtorAccount",
+                    "endToEndIdentification",
+                    "instructionIdentification",
+                    "interbankSettlementAmount",
+                    "sourceAccount",
+                    "uetr"
+                ],
+                "type": "object",
+                "properties": {
+                    "creditor": {
+                        "$ref": "#/components/schemas/InstitutionPayments.FinancialInstitutionId",
+                        "description": "The name and, optionally, the legal entity identifier of the account."
+                    },
+                    "creditorAccount": {
+                        "$ref": "#/components/schemas/InstitutionPayments.IbanAccount",
+                        "description": "Information about the creditor account in a given transaction."
+                    },
+                    "creditorAgent": {
+                        "$ref": "#/components/schemas/InstitutionPayments.CreditorAgent",
+                        "description": "Information that identifies the creditor agent as a financial institution."
+                    },
+                    "debtor": {
+                        "$ref": "#/components/schemas/InstitutionPayments.FinancialInstitutionId",
+                        "description": "Details about the account holder."
+                    },
+                    "debtorAccount": {
+                        "$ref": "#/components/schemas/InstitutionPayments.IbanAccount",
+                        "description": "Unambiguous identification of the account of the debtor to which a debit entry will be made as a result of the transaction."
+                    },
+                    "endToEndIdentification": {
+                        "description": "Unique identification, as assigned by the initiating party, to unambiguously identify the transaction. This identification is passed on, unchanged, throughout the entire end-to-end chain.",
+                        "minLength": 1,
+                        "maxLength": 35,
+                        "pattern": "[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+](|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+]|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+ ]{1,33}[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+])",
+                        "type": "string"
+                    },
+                    "instructionIdentification": {
+                        "description": "Unique identification, as assigned by an instructing party for an instructed party, to unambiguously identify the instruction.",
+                        "minLength": 1,
+                        "maxLength": 35,
+                        "pattern": "[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+](|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+]|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+ ]{1,33}[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+])",
+                        "type": "string"
+                    },
+                    "interbankSettlementAmount": {
+                        "$ref": "#/components/schemas/InstitutionPayments.InterbankSettlementAmount"
+                    },
+                    "sourceAccount": {
+                        "$ref": "#/components/schemas/InstitutionPayments.SourceAccount",
+                        "description": "The ClearBank account that will be credited or debited based on the successful completion of the payment instruction."
+                    },
+                    "uetr": {
+                        "type": "string",
+                        "pattern": "[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}",
+                        "format": "uuid",
+                        "description": "Universally unique identifier to provide an end-to-end reference of a payment transaction."
+                    },
+                    "previousInstructingAgents": {
+                        "description": "Agents who were previously involved with the payment.",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/InstitutionPayments.PreviousInstructingAgent"
+                        }
+                    },
+                    "purpose": {
+                        "description": "Underlying reason for the payment transaction, as published in an external purpose code list.",
+                        "type": "string"
+                    },
+                    "remittanceInformationUnstructured": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 140,
+                        "pattern": "[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]](|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+ !#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]{1,138}[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]])",
+                        "description": "Information supplied to enable the matching of an entry with the items that the transfer is intended to settle, such as commercial invoices in an accounts receivable system, in an unstructured form."
+                    }
+                },
+                "additionalProperties": false
+            },
+            "InstitutionPayments.InstitutionPaymentResponse": {
+                "type": "object",
+                "properties": {
+                    "paymentId": {
+                        "type": "string"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "InstitutionPayments.InterbankSettlementAmount": {
+                "description": "The payment that has been instructed to be made in euros.",
+                "required": [
+                    "amount",
+                    "currency"
+                ],
+                "type": "object",
+                "properties": {
+                    "amount": {
+                        "type": "number",
+                        "format": "double",
+                        "description": "Indicates the amount used in a given transaction or account balance."
+                    },
+                    "currency": {
+                        "minLength": 3,
+                        "maxLength": 3,
+                        "type": "string",
+                        "description": "The three-letter ISO currency code for the new currency to be supported by the account. Set to 'EUR' as other currencies are not supported."
+                    }
+                },
+                "additionalProperties": false
+            },
+            "InstitutionPayments.PostalAddress": {
+                "required": [
+                    "country",
+                    "townName"
+                ],
+                "type": "object",
+                "properties": {
+                    "townName": {
+                        "maxLength": 35,
+                        "minLength": 1,
+                        "type": "string",
+                        "pattern": "[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]](|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+ !#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]{1,33}[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]])",
+                        "description": "Name of a built-up area, with defined boundaries, and a local government."
+                    },
+                    "country": {
+                        "maxLength": 2,
+                        "minLength": 2,
+                        "type": "string",
+                        "description": "Nation with its own government."
+                    }
+                },
+                "additionalProperties": false
+            },
+            "InstitutionPayments.PreviousInstructingAgent": {
+                "required": [
+                    "agent",
+                    "order"
+                ],
+                "type": "object",
+                "properties": {
+                    "order": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "agent": {
+                        "description": "The financial institution involved with the payment.",
+                        "$ref": "#/components/schemas/InstitutionPayments.Agent"
+                    },
+                    "agentAccount": {
+                        "description": "The account of that financial institution.",
+                        "$ref": "#/components/schemas/InstitutionPayments.PreviousInstructingAgentAccount"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "InstitutionPayments.PreviousInstructingAgentAccount": {
+                "required": [
+                    "iban"
+                ],
+                "type": "object",
+                "properties": {
+                    "iban": {
+                        "minLength": 5,
+                        "maxLength": 34,
+                        "pattern": "[A-Z]{2,2}[0-9]{2,2}[a-zA-Z0-9]{1,30}",
+                        "type": "string",
+                        "description": "International Bank Account Number (IBAN) - identifier used internationally by financial institutions to uniquely identify the account of a customer. Further specifications of the format and content of the IBAN can be found in the standard ISO 13616 \"Banking and related financial services - International Bank Account Number (IBAN)\" version 1997-10-01, or later revisions."
+                    }
+                },
+                "additionalProperties": false
+            },
+            "InstitutionPayments.SourceAccount": {
+                "required": [
+                    "bicfi",
+                    "iban"
+                ],
+                "type": "object",
+                "properties": {
+                    "bicfi": {
+                        "minLength": 11,
+                        "maxLength": 11,
+                        "pattern": "[A-Z0-9]{4,4}[A-Z]{2,2}[A-Z0-9]{2,2}[A-Z0-9]{3,3}",
+                        "type": "string",
+                        "description": "Financial Institution's Bank Identifier Code (BIC)."
+                    },
+                    "iban": {
+                        "minLength": 5,
+                        "maxLength": 34,
+                        "pattern": "[A-Z]{2,2}[0-9]{2,2}[a-zA-Z0-9]{1,30}",
+                        "type": "string",
+                        "description": "International Bank Account Number (IBAN) - identifier used internationally by financial institutions to uniquely identify the account of a customer. Further specifications of the format and content of the IBAN can be found in the standard ISO 13616 \"Banking and related financial services - International Bank Account Number (IBAN)\" version 1997-10-01, or later revisions."
+                    }
+                },
+                "additionalProperties": false
+            },
+            "Microsoft.AspNetCore.Mvc.ProblemDetails": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "detail": {
+                        "type": "string"
+                    },
+                    "instance": {
+                        "type": "string"
+                    }
+                },
+                "additionalProperties": {}
+            },
+            "PaymentReturns.DateAndPlaceOfBirth": {
+                "required": [
+                    "birthDate",
+                    "cityOfBirth",
+                    "countryOfBirth",
+                    "provinceOfBirth"
+                ],
+                "type": "object",
+                "properties": {
+                    "birthDate": {
+                        "pattern": "\\d{4}\\-(0[1-9]|1[012])\\-(0[1-9]|[12][0-9]|3[01])",
+                        "type": "string",
+                        "description": "Party's date of birth."
+                    },
+                    "provinceOfBirth": {
+                        "maxLength": 35,
+                        "minLength": 1,
+                        "type": "string",
+                        "pattern": "[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]](|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+ !#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]{1,33}[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]])",
+                        "description": "Party's province of birth."
+                    },
+                    "cityOfBirth": {
+                        "maxLength": 35,
+                        "minLength": 1,
+                        "type": "string",
+                        "description": "Return recipient's city of birth.",
+                        "pattern": "[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]](|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+ !#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]{1,33}[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]])"
+                    },
+                    "countryOfBirth": {
+                        "minLength": 2,
+                        "maxLength": 2,
+                        "type": "string",
+                        "description": "Two-letter ISO country code for the return recipient's country of birth."
+                    }
+                },
+                "additionalProperties": false
+            },
+            "PaymentReturns.OrganisationIdentification": {
+                "type": "object",
+                "properties": {
+                    "anyBic": {
+                        "maxLength": 11,
+                        "minLength": 11,
+                        "type": "string",
+                        "pattern": "[A-Z0-9]{4,4}[A-Z]{2,2}[A-Z0-9]{2,2}[A-Z0-9]{3,3}",
+                        "description": "A BIC assigned by SWIFT to a non financial institution."
+                    },
+                    "lei": {
+                        "maxLength": 20,
+                        "minLength": 20,
+                        "type": "string",
+                        "pattern": "[A-Z0-9]{18,18}[0-9]{2,2}",
+                        "description": "Legal Entity Identifier of the party"
+                    },
+                    "other": {
+                        "minItems": 1,
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PaymentReturns.Other"
+                        }
+                    }
+                },
+                "additionalProperties": false
+            },
+            "PaymentReturns.Other": {
+                "required": [
+                    "identification"
+                ],
+                "type": "object",
+                "properties": {
+                    "identification": {
+                        "maxLength": 35,
+                        "minLength": 1,
+                        "type": "string",
+                        "pattern": "[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+](|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+]|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+ ]{1,33}[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+])",
+                        "description": "Unambiguous Identification for the given scheme."
+                    },
+                    "schemeName": {
+                        "maxLength": 4,
+                        "minLength": 1,
+                        "type": "string",
+                        "description": "Scheme type."
+                    },
+                    "issuer": {
+                        "maxLength": 35,
+                        "minLength": 1,
+                        "type": "string",
+                        "pattern": "[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+](|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+]|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+ ]{1,33}[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+])",
+                        "description": "The name of the entity that assigns the identification."
+                    }
+                },
+                "additionalProperties": false
+            },
+            "PaymentReturns.SettlementAmount": {
+                "required": [
+                    "amount",
+                    "currency"
+                ],
+                "type": "object",
+                "properties": {
+                    "amount": {
+                        "type": "number",
+                        "format": "double",
+                        "description": "Indicates the amount used in a given transaction or account balance."
+                    },
+                    "currency": {
+                        "minLength": 3,
+                        "maxLength": 3,
+                        "type": "string",
+                        "description": "The three-letter ISO currency code for the new currency to be supported by the account."
+                    }
+                },
+                "additionalProperties": false
+            },
+            "PaymentReturns.ChargeInformation": {
+                "required": [
+                    "bicfi",
+                    "chargeAmount"
+                ],
+                "type": "object",
+                "properties": {
+                    "bicfi": {
+                        "minLength": 11,
+                        "maxLength": 11,
+                        "pattern": "[A-Z0-9]{4,4}[A-Z]{2,2}[A-Z0-9]{2,2}[A-Z0-9]{3,3}",
+                        "type": "string",
+                        "description": "Financial Institution's Bank Identifier Code (BIC)."
+                    },
+                    "chargeAmount": {
+                        "$ref": "#/components/schemas/PaymentReturns.SettlementAmount"
+                    }
+                }
+            },
+            "PaymentReturns.PartyInformation": {
+                "required": [
+                    "name",
+                    "postalAddress"
+                ],
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "maxLength": 140,
+                        "minLength": 1,
+                        "pattern": "[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]](|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+ !#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]{1,138}[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]])",
+                        "type": "string",
+                        "description": "Name of the party"
+                    },
+                    "postalAddress": {
+                        "$ref": "#/components/schemas/PaymentReturns.PostalAddress"
+                    },
+                    "countryOfResidence": {
+                        "maxLength": 2,
+                        "minLength": 2,
+                        "description": "The party's country of residence",
+                        "type": "string"
+                    },
+                    "organisationIdentification": {
+                        "$ref": "#/components/schemas/PaymentReturns.OrganisationIdentification",
+                        "description": "Information about the organisation."
+                    },
+                    "privateIdentification": {
+                        "$ref": "#/components/schemas/PaymentReturns.PrivateIdentification",
+                        "description": "The party's private or personal information."
+                    }
+                },
+                "additionalProperties": false
+            },
+            "PaymentReturns.PaymentReturnRequest": {
+                "required": [
+                    "originalUetr",
+                    "reason",
+                    "requestingParty",
+                    "instructionIdentification"
+                ],
+                "type": "object",
+                "properties": {
+                    "originalUetr": {
+                        "type": "string",
+                        "pattern": "[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}",
+                        "format": "uuid"
+                    },
+                    "requestingParty": {
+                        "enum": [
+                            "Creditor",
+                            "CreditorAgent",
+                            "IntermediaryAgent3",
+                            "IntermediaryAgent2",
+                            "IntermediaryAgent1"
+                        ],
+                        "type": "string"
+                    },
+                    "reason": {
+                        "description": "Payment reason codes, compliant with ISO 20022.",
+                        "minLength": 1,
+                        "maxLength": 4,
+                        "enum": [
+                            "AC01",
+                            "AC03",
+                            "AC04",
+                            "AC06",
+                            "AC13",
+                            "AC14",
+                            "AC15",
+                            "AC16",
+                            "AC17",
+                            "AG01",
+                            "AG02",
+                            "AM01",
+                            "AM02",
+                            "AM03",
+                            "AM04",
+                            "AM05",
+                            "AM06",
+                            "AM07",
+                            "AM09",
+                            "AM10",
+                            "ARDT",
+                            "BE01",
+                            "BE04",
+                            "BE05",
+                            "BE06",
+                            "BE07",
+                            "BE08",
+                            "CN01",
+                            "CNOR",
+                            "CNPC",
+                            "CURR",
+                            "CUST",
+                            "DNOR",
+                            "DS28",
+                            "DT01",
+                            "DT02",
+                            "ED01",
+                            "ED03",
+                            "ED05",
+                            "EMVL",
+                            "ERIN",
+                            "FF05",
+                            "FOCR",
+                            "FR01",
+                            "FRTR",
+                            "MD01",
+                            "MD02",
+                            "MD06",
+                            "MD07",
+                            "MS02",
+                            "MS03",
+                            "NARR",
+                            "NOAS",
+                            "NOCM",
+                            "NOOR",
+                            "PINL",
+                            "RC01",
+                            "RC07",
+                            "RF01",
+                            "RR01",
+                            "RR02",
+                            "RR03",
+                            "RR04",
+                            "RUTA",
+                            "SL01",
+                            "SL02",
+                            "SL11",
+                            "SL12",
+                            "SL13",
+                            "SL14",
+                            "SP01",
+                            "SP02",
+                            "SVNR",
+                            "TM01",
+                            "TRAC",
+                            "UPAY",
+                            "AGNT",
+                            "FF06",
+                            "RC08",
+                            "BE11",
+                            "BE17",
+                            "AC02",
+                            "RR11",
+                            "BE10",
+                            "BE16",
+                            "RC11",
+                            "RR12",
+                            "FF03",
+                            "FF07",
+                            "FF04",
+                            "RR09",
+                            "RR05",
+                            "RR07",
+                            "RR08",
+                            "RR06",
+                            "AG07",
+                            "G004",
+                            "MD05",
+                            "AC07",
+                            "DC04"
+                        ],
+                        "type": "string"
+                    },
+                    "instructionIdentification": {
+                        "description": "Unique identification, as assigned by an instructing party for an instructed party, to unambiguously identify the instruction.",
+                        "minLength": 1,
+                        "maxLength": 35,
+                        "pattern": "[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+](|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+]|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+ ]{1,33}[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+])",
+                        "type": "string"
+                    },
+                    "SettlementAmount": {
+                        "$ref": "#/components/schemas/PaymentReturns.SettlementAmount"
+                    },
+                    "chargesInformation": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PaymentReturns.ChargeInformation"
+                        }
+                    },
+                    "initiatingParty": {
+                        "description": "Information about the party that holds the initating payment account.",
+                        "$ref": "#/components/schemas/PaymentReturns.PartyInformation"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "PaymentReturns.PaymentReturnResponse": {
+                "type": "object",
+                "properties": {
+                    "paymentReturnId": {
+                        "type": "string"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "PaymentReturns.PostalAddress": {
+                "required": [
+                    "country",
+                    "postCode",
+                    "townName"
+                ],
+                "type": "object",
+                "properties": {
+                    "townName": {
+                        "maxLength": 35,
+                        "minLength": 1,
+                        "type": "string",
+                        "pattern": "[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]](|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+ !#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]{1,33}[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]])",
+                        "description": "Name of a built-up area, with defined boundaries, and a local government."
+                    },
+                    "postCode": {
+                        "maxLength": 16,
+                        "minLength": 1,
+                        "type": "string",
+                        "pattern": "[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]](|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]|[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+ !#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]]{1,14}[0-9a-zA-Z\/\\-\\?:\\(\\)\\.,'\\+!#$%&\\*=^_`\\{\\|\\}~\";<>@\\[\\\\\\]])",
+                        "description": "Identifier consisting of a group of letters and/or numbers that is added to a postal address to assist the sorting of mail."
+                    },
+                    "country": {
+                        "maxLength": 2,
+                        "minLength": 2,
+                        "type": "string"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "PaymentReturns.PrivateIdentification": {
+                "type": "object",
+                "properties": {
+                    "dateAndPlaceOfBirth": {
+                        "$ref": "#/components/schemas/PaymentReturns.DateAndPlaceOfBirth"
+                    },
+                    "other": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PaymentReturns.Other"
+                        }
+                    }
+                },
+                "additionalProperties": false
+            },
+            "PaymentStatus.FailureReason": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "reason": {
+                        "description": "Payment reason codes, compliant with ISO 20022.",
+                        "minLength": 1,
+                        "maxLength": 4,
+                        "enum": [
+                            "AC01",
+                            "AC03",
+                            "AC04",
+                            "AC06",
+                            "AC13",
+                            "AC14",
+                            "AC15",
+                            "AC16",
+                            "AC17",
+                            "AG01",
+                            "AG02",
+                            "AM01",
+                            "AM02",
+                            "AM03",
+                            "AM04",
+                            "AM05",
+                            "AM06",
+                            "AM07",
+                            "AM09",
+                            "AM10",
+                            "ARDT",
+                            "BE01",
+                            "BE04",
+                            "BE05",
+                            "BE06",
+                            "BE07",
+                            "BE08",
+                            "CN01",
+                            "CNOR",
+                            "CNPC",
+                            "CURR",
+                            "CUST",
+                            "DNOR",
+                            "DS28",
+                            "DT01",
+                            "DT02",
+                            "ED01",
+                            "ED03",
+                            "ED05",
+                            "EMVL",
+                            "ERIN",
+                            "FF05",
+                            "FOCR",
+                            "FR01",
+                            "FRTR",
+                            "MD01",
+                            "MD02",
+                            "MD06",
+                            "MD07",
+                            "MS02",
+                            "MS03",
+                            "NARR",
+                            "NOAS",
+                            "NOCM",
+                            "NOOR",
+                            "PINL",
+                            "RC01",
+                            "RC07",
+                            "RF01",
+                            "RR01",
+                            "RR02",
+                            "RR03",
+                            "RR04",
+                            "RUTA",
+                            "SL01",
+                            "SL02",
+                            "SL11",
+                            "SL12",
+                            "SL13",
+                            "SL14",
+                            "SP01",
+                            "SP02",
+                            "SVNR",
+                            "TM01",
+                            "TRAC",
+                            "UPAY",
+                            "AGNT",
+                            "FF06",
+                            "RC08",
+                            "BE11",
+                            "BE17",
+                            "AC02",
+                            "RR11",
+                            "BE10",
+                            "BE16",
+                            "RC11",
+                            "RR12",
+                            "FF03",
+                            "FF07",
+                            "FF04",
+                            "RR09",
+                            "RR05",
+                            "RR07",
+                            "RR08",
+                            "RR06",
+                            "AG07",
+                            "G004",
+                            "MD05",
+                            "AC07",
+                            "DC04",
+                            "CB01",
+                            "CB02",
+                            "CB03",
+                            "CB04"
+                        ],
+                        "type": "string"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "PaymentStatus.PaymentStatus": {
+                "enum": [
+                    "Initiated",
+                    "Accepted",
+                    "Rejected",
+                    "Completed"
+                ],
+                "type": "string"
+            },
+            "PaymentStatus.PaymentStatusResponse": {
+                "type": "object",
+                "properties": {
+                    "institutionId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "uetr": {
+                        "pattern": "[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}",
+                        "type": "string"
+                    },
+                    "end2EndId": {
+                        "type": "string"
+                    },
+                    "instructionId": {
+                        "type": "string"
+                    },
+                    "paymentStatus": {
+                        "$ref": "#/components/schemas/PaymentStatus.PaymentStatus"
+                    },
+                    "failureReason": {
+                        "$ref": "#/components/schemas/PaymentStatus.FailureReason"
+                    },
+                    "lastModifiedTimestamp": {
+                        "description": "Last modified timestamp, expressed in either UTC time format (YYYY-MM-DDThh:mm:ss.sssZ) or local time with UTC offset format (YYYY-MM-DDThh:mm:ss.sss+/-hh:mm).",
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "createdTimestamp": {
+                        "description": "Created timestamp, expressed in either UTC time format (YYYY-MM-DDThh:mm:ss.sssZ) or local time with UTC offset format (YYYY-MM-DDThh:mm:ss.sss+/-hh:mm).",
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "Recalls.PaymentRecallRequest": {
+                "type": "object",
+                "properties": {
+                    "paymentId": {
+                        "type": "string"
+                    },
+                    "cancellationCode": {
+                        "type": "string"
+                    }
+                },
+                "additionalProperties": false
+            }
+        }
+    }
+}
