@@ -292,7 +292,13 @@ module MultiCurrency =
     type MccyTransactionsV1 = OpenApiClientProvider<schemaMultiCurrencyTransactions, PreferAsync=true>
     type MccyPaymentsV1 = OpenApiClientProvider<schemaMultiCurrencyPayments, PreferAsync=true>
 
+    [<RequireQualifiedAccess>]
     type AccountKind = GeneralSegregated | DesignatedSegregated | GeneralClient | DesignatedClient | YourFunds
+    [<RequireQualifiedAccess>]
+    type MccyRoutingCode =
+    | IBAN of string
+    | BBAN of string
+    | Descriptor of string
 
     let ISOCurrencySymbols() =
         System.Globalization.CultureInfo.GetCultures(System.Globalization.CultureTypes.SpecificCultures)
@@ -300,10 +306,10 @@ module MultiCurrency =
         |> Array.map(fun g -> g.ISOCurrencySymbol) |> Array.distinct
 
     /// Creates a new account
-    let createNewAccount config azureKeyVaultCertificateName (requestId:Guid) (sortCode:MccyTransactionsV1.RoutingCode) accountName ownerName (accountKind:AccountKind) isoCurrencySymbols identifiers productId customerId =
-        let sortCode = MccyTransactionsV1.RoutingCode(sortCode.Code.Replace("-", ""), sortCode.Kind)
+    let createNewAccount config azureKeyVaultCertificateName (requestId:Guid) (sortcode:string) accountName ownerName (accountKind:AccountKind) isoCurrencySymbols identifiers productId customerId =
+        let routingCode = MccyTransactionsV1.RoutingCode(sortcode.Replace("-", "").Replace(" ", ""), "GBSortCode")
         let req =
-            MccyTransactionsV1.CreateAccountRequest(accountName, ownerName, (accountKind.ToString()), isoCurrencySymbols, sortCode, identifiers, productId, customerId)
+            MccyTransactionsV1.CreateAccountRequest(accountName, ownerName, (accountKind.ToString()), isoCurrencySymbols, routingCode, identifiers, productId, customerId)
         let requestIdS = requestId.ToString("N") //todo, unique, save to db
 
         let httpClient =
