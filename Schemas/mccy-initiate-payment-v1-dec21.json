@@ -1,0 +1,1404 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Mccy Payment Orchestrator External Api V1",
+    "description": "Mccy Payment Orchestrator External Api V1",
+    "version": "1.0.Dec21"
+  },
+  "paths": {
+    "/v1/mccy/payments": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "This endpoint is used to initiate payments.",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "Your API token, obtained from the ClearBank Portal.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "DigitalSignature",
+            "in": "header",
+            "description": "Signed hash of the body of the request. The hash is signed by your private key.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Request-Id",
+            "in": "header",
+            "description": "A unique identifier for the request; valid for 24 hours, max length 83.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error"
+          },
+          "503": {
+            "description": "Server Error"
+          }
+        }
+      }
+    },
+    "/v1/mccy/payments/{batchId}": {
+      "delete": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "This endpoint is used to cancel an entire batch of payments with a matching batch ID. It must be sent at least one hour prior to the opening of the currency payment window in order to successfully cancel the payment.",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "Your API token, obtained from the ClearBank Portal.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Request-Id",
+            "in": "header",
+            "description": "A unique identifier for the request; valid for 24 hours, max length 83.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "batchId",
+            "in": "path",
+            "required": true,
+            "description": "This must match the batch ID submitted in the payment request.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Client Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error"
+          },
+          "503": {
+            "description": "Server Error"
+          }
+        }
+      }
+    },
+    "/v1/mccy/payments/{batchId}/{endToEndId}": {
+      "delete": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "This endpoint is used to cancel a single payment within a batch, with a matching batch ID and end-to-end ID. It must be sent at least one hour prior to the opening of the currency payment window in order to successfully cancel the payment.",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "Your API token, obtained from the ClearBank Portal.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Request-Id",
+            "in": "header",
+            "description": "A unique identifier for the request; valid for 24 hours, max length 83.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "batchId",
+            "in": "path",
+            "required": true,
+            "description": "This must match the batch ID submitted in the payment request.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endToEndId",
+            "in": "path",
+            "required": true,
+            "description": "This must match the end-to-end ID submitted in the payment request.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Client Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error"
+          },
+          "503": {
+            "description": "Server Error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Creditor": {
+        "required": [
+          "name",
+          "address"
+        ],
+        "type": "object",
+        "description": "Information about the creditor of the transaction.",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Creditor’s name.",
+            "minLength": 1,
+            "maxLength": 140
+          },
+          "address": {
+            "type": "object",
+            "description": "Information about the creditor’s address.",
+            "required": [
+              "addressLine1",
+              "addressLine2",
+              "postCode",
+              "country"
+            ],
+            "properties": {
+              "addressLine1": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70,
+                "description": "First line of the creditor’s address."
+              },
+              "addressLine2": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 35,
+                "description": "Second line of the creditor’s address."
+              },
+              "addressLine3": {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 35,
+                "description": "Third line of the creditor’s address.",
+                "nullable": true
+              },
+              "postCode": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16,
+                "description": "Creditor’s postcode."
+              },
+              "country": {
+                "minLength": 2,
+                "maxLength": 2,
+                "type": "string",
+                "description": "Two-letter ISO country code for the creditor’s address.",
+                "pattern": "^[A-Z]{2}$"
+              }
+            }
+          },
+          "bic": {
+            "type": "string",
+            "description": "Creditor’s Business Identifier Code (BIC).",
+            "nullable": true
+          },
+          "identification": {
+            "type": "object",
+            "description": "Creditor’s business and personal information.",
+            "properties": {
+              "organisationIdentification": {
+                "type": "object",
+                "description": "Information about the creditor’s organisation.",
+                "properties": {
+                  "Other": {
+                    "type": "object",
+                    "description": "Information about the creditor’s non-SWIFT BIC organisation identification.",
+                    "properties": {
+                      "identification": {
+                        "type": "string",
+                        "description": "Creditor's non-SWIFT BIC organisation identification, as assigned by an identification scheme.",
+                        "minLength": 0,
+                        "maxLength": 35,
+                        "nullable": true
+                      },
+                      "schemeName": {
+                        "type": "object",
+                        "description": "Information about the identification scheme in coded form or free-form text.",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "description": "Name of the identification scheme in coded form, as specified in the ExternalOrganisationIdentification1Code code set required by ISO 20022 Message Schemas. No need to specify if you are providing this name in free-form text (i.e., proprietary).",
+                            "minLength": 0,
+                            "maxLength": 4,
+                            "nullable": true
+                          },
+                          "proprietary": {
+                            "type": "string",
+                            "description": "Name of the identification scheme in free-form text. No need to specify if you are providing this name in  coded form (i.e., code).",
+                            "minLength": 0,
+                            "maxLength": 35,
+                            "nullable": true
+                          }
+                        }
+                      },
+                      "issuer": {
+                        "type": "string",
+                        "description": "Entity/authority/body responsible for issuing the identification.",
+                        "minLength": 0,
+                        "maxLength": 35,
+                        "nullable": true
+                      }
+                    }
+                  }
+                }
+              },
+              "privateIdentification": {
+                "type": "object",
+                "description": "The creditor’s private or personal information.",
+                "properties": {
+                  "dateAndPlaceOfBirth": {
+                    "type": "object",
+                    "description": "Creditor’s birth information.",
+                    "properties": {
+                      "dateOfBirth": {
+                        "type": "string",
+                        "description": "Creditor’s date of birth.",
+                        "format": "date",
+                        "nullable": true
+                      },
+                      "cityOfBirth": {
+                        "type": "string",
+                        "description": "Creditor’s city of birth.",
+                        "minLength": 0,
+                        "maxLength": 35,
+                        "nullable": true
+                      },
+                      "countryOfBirth": {
+                        "type": "string",
+                        "description": "Two-letter ISO country code for the creditor’s country of birth.",
+                        "minLength": 0,
+                        "maxLength": 2,
+                        "pattern": "^[A-Z]{2}$",
+                        "nullable": true
+                      }
+                    }
+                  },
+                  "other": {
+                    "type": "object",
+                    "description": "Information about the creditor's private identification.",
+                    "properties": {
+                      "identification": {
+                        "type": "string",
+                        "description": "Creditor's personal identification, as assigned by an identification scheme.",
+                        "minLength": 0,
+                        "maxLength": 35,
+                        "nullable": true
+                      },
+                      "schemeName": {
+                        "type": "object",
+                        "description": "Information about the identification scheme in coded form, or free-form text.",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "description": "Name of the identification scheme in coded form, as specified in the PersonalIdentification1Code code set required by ISO 20022 Message Schemas. No need to specify if you are providing this name in free-form text (i.e., proprietary).",
+                            "minLength": 0,
+                            "maxLength": 4,
+                            "nullable": true
+                          },
+                          "proprietary": {
+                            "type": "string",
+                            "description": "Name of the identification scheme in free-form text. No need to specify if you are providing this name in  coded form (i.e., code).",
+                            "minLength": 0,
+                            "maxLength": 35,
+                            "nullable": true
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "countryOfResidence": {
+            "type": "string",
+            "description": "Two-letter ISO country code for the creditor’s country of residence.",
+            "minLength": 0,
+            "maxLength": 2,
+            "pattern": "^[A-Z]{2}$",
+            "nullable": true
+          },
+          "contactDetails": {
+            "type": "object",
+            "description": "Creditor’s contact details.",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Creditor’s contact name.",
+                "minLength": 0,
+                "maxLength": 140,
+                "nullable": true
+              },
+              "emailAddress": {
+                "type": "string",
+                "description": "Creditor’s email address.",
+                "minLength": 0,
+                "maxLength": 2048,
+                "nullable": true
+              }
+            }
+          },
+          "iban": {
+            "type": "string",
+            "description": "Creditor’s International Bank Account Number. Mandatory only if account number is not specified.",
+            "nullable": true
+          },
+          "accountNumber": {
+            "type": "string",
+            "description": "Creditor’s Account Number. Mandatory only if iban is not specified.",
+            "nullable": true,
+            "minLength": 0,
+            "maxLength": 34
+          },
+          "schemeName": {
+            "type": "object",
+            "description": "Information about the identification scheme in coded form or free-form text. This should only be provided if the creditor’s account number has been specified",
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "Name of the identification scheme in coded form. No need to specify if you are providing this name in free-form text (i.e., proprietary). Valid options include: CASH, CHAR, COMM, TAXE, CISH, TRAS, SACC, CACC, SVGS, ONDP, MGLD, NREX,MOMA, LOAN, SLRY, ODFT.",
+                "minLength": 0,
+                "maxLength": 4,
+                "nullable": true
+              },
+              "proprietary": {
+                "type": "string",
+                "description": "Name of the identification scheme in free-form text. No need to specify if you are providing this name in  coded form (i.e., code).",
+                "minLength": 0,
+                "maxLength": 35,
+                "nullable": true
+              }
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "AccountIdentifierKind": {
+        "enum": [
+          "AccountId",
+          "IBAN"
+        ],
+        "type": "string",
+        "description": "The kind of account identifier provided. This can either be IBAN or AccountId. This field is case insensitive."
+      },
+      "AccountIdentifier": {
+        "required": [
+          "kind",
+          "identifier"
+        ],
+        "type": "object",
+        "description": "The unique identifier for the account.",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/AccountIdentifierKind"
+          },
+          "identifier": {
+            "type": "string",
+            "description": "Unique account identifier value that corresponds to the specified account identifier kind.",
+            "minLength": 1,
+            "maxLength": 36
+          }
+        },
+        "additionalProperties": false
+      },
+      "IntermediaryAgent": {
+        "type": "object",
+        "description": "Information about the intermediary/correspondent bank.",
+        "properties": {
+          "FinancialInstitutionIdentification": {
+            "type": "object",
+            "description": "Information that identifies the intermediary agent as a financial institution. Mandatory only when intermediary agent details are being provided.",
+            "required": [
+              "addressDetails"
+            ],
+            "properties": {
+              "bic": {
+                "type": "string",
+                "description": "Intermediary agent’s Business Identifier Code (BIC). No need to specify if you are providing the intermediary agent’s American Bankers Association (ABA) routing number.",
+                "nullable": true
+              },
+              "aba": {
+                "type": "string",
+                "description": "Intermediary agent’s American Bankers Association (ABA) routing number. No need to specify if you are providing the intermediary agent’s Business Identifier Code (BIC).",
+                "minLength": 0,
+                "maxLength": 35,
+                "nullable": true
+              },
+              "name": {
+                "type": "string",
+                "description": "Intermediary agent’s name.",
+                "minLength": 0,
+                "maxLength": 140,
+                "nullable": true
+              },
+              "addressDetails": {
+                "type": "object",
+                "description": "Information about the intermediary agent’s address. Mandatory only when financial institution identification details are being provided.",
+                "nullable": true,
+                "required": [
+                  "country"
+                ],
+                "properties": {
+                  "addressLine1": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 70,
+                    "description": "First line of the intermediary agent’s address.",
+                    "nullable": true
+                  },
+                  "addressLine2": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 35,
+                    "description": "Second line of the intermediary agent’s address.",
+                    "nullable": true
+                  },
+                  "addressLine3": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 35,
+                    "description": "Third line of the intermediary agent’s address.",
+                    "nullable": true
+                  },
+                  "postCode": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 16,
+                    "description": "Intermediary agent’s postcode.",
+                    "nullable": true
+                  },
+                  "country": {
+                    "minLength": 2,
+                    "maxLength": 2,
+                    "type": "string",
+                    "description": "Two-letter ISO country code for the intermediary agent’s address. Mandatory only when the intermediary agent’s details are being provided.",
+                    "pattern": "^[A-Z]{2}$"
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreditorAgent": {
+        "type": "object",
+        "required": [
+          "FinancialInstitutionIdentification"
+        ],
+        "properties": {
+          "FinancialInstitutionIdentification": {
+            "type": "object",
+            "description": "Information that identifies the creditor agent as a financial institution.",
+            "required": [
+              "name",
+              "addressDetails"
+            ],
+            "properties": {
+              "bic": {
+                "type": "string",
+                "description": "Creditor agent’s Business Identifier Code (BIC). No need to specify if you are providing the creditor agent’s American Bankers Association (ABA) routing number or Clearing System Id Code.",
+                "nullable": true
+              },
+              "aba": {
+                "type": "string",
+                "description": "Creditor agent’s American Bankers Association (ABA) routing number. No need to specify if you are providing the creditor agent’s Business Identifier Code (BIC) or Clearing System Id Code.",
+                "minLength": 0,
+                "maxLength": 35,
+                "nullable": true
+              },
+              "clearingSystemIdCode": {
+                "description": "Creditor agent’s Clearing System Id Code. No need to specify if you are providing the creditor agent’s Business Identifier Code (BIC) or American Bankers Association (ABA) routing number.",
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 35,
+                "nullable": true
+              },
+              "memberId": {
+                "description": "Creditor agent’s Member Id for the specified clearing system. Mandatory only when Clearing System Id Code has been provided.",
+                "type": "string",
+                "nullable": true,
+                "minLength": 0,
+                "maxLength": 35
+              },
+              "name": {
+                "type": "string",
+                "description": "Creditor agent’s name.",
+                "minLength": 1,
+                "maxLength": 140
+              },
+              "addressDetails": {
+                "type": "object",
+                "description": "Information about the creditor agent’s address.",
+                "nullable": true,
+                "required": [
+                  "country"
+                ],
+                "properties": {
+                  "addressLine1": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 70,
+                    "description": "First line of the creditor agent’s address.",
+                    "nullable": true
+                  },
+                  "addressLine2": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 35,
+                    "description": "Second line of the creditor agent’s address.",
+                    "nullable": true
+                  },
+                  "addressLine3": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 35,
+                    "description": "Third line of the creditor agent’s address.",
+                    "nullable": true
+                  },
+                  "postCode": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 16,
+                    "description": "Creditor agent’s postcode.",
+                    "nullable": true
+                  },
+                  "country": {
+                    "minLength": 2,
+                    "maxLength": 2,
+                    "type": "string",
+                    "description": "Two-letter ISO country code for the creditor agent’s address. Mandatory only when the creditor agent’s details are being provided.",
+                    "pattern": "^[A-Z]{2}$"
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "branchId": {
+            "type": "string",
+            "description": "Creditor agent’s unique branch Id.",
+            "minLength": 0,
+            "maxLength": 35,
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Purpose": {
+        "type": "object",
+        "nullable": true,
+        "description": "Information about the purpose of the transaction.",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Purpose of the transaction in coded form, as specified in the Purpose11Code code set required by ISO 20022 Message Schemas. No need to specify if you are providing this name in free-form text (i.e., proprietary).",
+            "minLength": 0,
+            "maxLength": 4,
+            "nullable": true
+          },
+          "proprietary": {
+            "type": "string",
+            "description": "Purpose of the transaction in free-form text. No need to specify if you are providing this name in  coded form (i.e., code).",
+            "minLength": 0,
+            "maxLength": 35,
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "RemittanceInformation": {
+        "type": "object",
+        "description": "Remittance information to accompany the payment.",
+        "nullable": true,
+        "properties": {
+          "additionalRemittanceInformation": {
+            "type": "string",
+            "description": "Additional remittance information in free-form text, to compliment the structured remittance information.",
+            "minLength": 0,
+            "maxLength": 140,
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UltimateCreditor": {
+        "type": "object",
+        "description": "Information about the ultimate creditor of the transaction. To be used where there is a “for further credit to” scenario.",
+        "nullable": true,
+        "required": [
+          "name",
+          "address"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Ultimate creditor’s name.",
+            "minLength": 1,
+            "maxLength": 140
+          },
+          "address": {
+            "type": "object",
+            "description": "Information about the ultimate creditor’s address. Mandatory only when information about the ultimate creditor is being provided.",
+            "nullable": true,
+            "required": [
+              "country"
+            ],
+            "properties": {
+              "addressLine1": {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 70,
+                "description": "First line of the ultimate creditor’s address.",
+                "nullable": true
+              },
+              "addressLine2": {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 35,
+                "description": "Second line of the ultimate creditor’s address.",
+                "nullable": true
+              },
+              "addressLine3": {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 35,
+                "description": "Third line of the ultimate creditor’s address.",
+                "nullable": true
+              },
+              "postCode": {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 16,
+                "description": "Ultimate creditor’s postcode.",
+                "nullable": true
+              },
+              "country": {
+                "minLength": 2,
+                "maxLength": 2,
+                "type": "string",
+                "description": "Two-letter ISO country code for the ultimate creditor’s address. Mandatory only when the ultimate creditor’s details are being provided.",
+                "pattern": "^[A-Z]{2}$"
+              }
+            }
+          },
+          "bic": {
+            "type": "string",
+            "description": "Ultimate creditor’s Business Identifier Code (BIC).",
+            "nullable": true
+          },
+          "identification": {
+            "type": "object",
+            "description": "The ultimate creditor’s business and personal information.",
+            "nullable": true,
+            "properties": {
+              "organisationIdentification": {
+                "type": "object",
+                "description": "Information about the ultimate creditor’s organisation.",
+                "properties": {
+                  "Other": {
+                    "type": "object",
+                    "description": "Information about the ultimate creditor’s non-SWIFT BIC organisation. identification.",
+                    "properties": {
+                      "identification": {
+                        "type": "string",
+                        "description": "The ultimate creditor's non-SWIFT BIC organisation identification, as assigned by an identification scheme. Customarily the account number/IBAN of the Ultimate Creditor held with the Creditor.",
+                        "minLength": 0,
+                        "maxLength": 35,
+                        "nullable": true
+                      },
+                      "schemeName": {
+                        "type": "object",
+                        "description": "Name of the identification scheme in coded form or free-form text.",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "description": "Name of the identification scheme in coded form, as specified in the ExternalOrganisationIdentification1Code code set required by ISO 20022 Message Schemas. No need to specify if you are providing this name in free-form text (i.e., proprietary).",
+                            "minLength": 0,
+                            "maxLength": 4,
+                            "nullable": true
+                          },
+                          "proprietary": {
+                            "type": "string",
+                            "description": "Name of the identification scheme in free-form text. No need to specify if you are providing this name in  coded form (i.e., code).",
+                            "minLength": 0,
+                            "maxLength": 35,
+                            "nullable": true
+                          }
+                        }
+                      },
+                      "issuer": {
+                        "type": "string",
+                        "description": "Entity/authority/body responsible for issuing the identification.",
+                        "minLength": 0,
+                        "maxLength": 35,
+                        "nullable": true
+                      }
+                    }
+                  }
+                }
+              },
+              "privateIdentification": {
+                "type": "object",
+                "description": "The ultimate creditor’s private or personal information.",
+                "nullable": true,
+                "properties": {
+                  "dateAndPlaceOfBirth": {
+                    "type": "object",
+                    "description": "The ultimate creditor’s birth information.",
+                    "nullable": true,
+                    "properties": {
+                      "dateOfBirth": {
+                        "type": "string",
+                        "description": "The ultimate creditor’s date of birth.",
+                        "format": "date",
+                        "nullable": true
+                      },
+                      "cityOfBirth": {
+                        "type": "string",
+                        "description": "The ultimate creditor’s city of birth.",
+                        "minLength": 0,
+                        "maxLength": 35,
+                        "nullable": true
+                      },
+                      "countryOfBirth": {
+                        "type": "string",
+                        "description": "Two-letter ISO country code for the ultimate creditor’s country of birth.",
+                        "minLength": 0,
+                        "maxLength": 2,
+                        "pattern": "^[A-Z]{2}$",
+                        "nullable": true
+                      }
+                    }
+                  },
+                  "other": {
+                    "type": "object",
+                    "description": "Information about the ultimate creditor’s private identification.",
+                    "nullable": true,
+                    "properties": {
+                      "identification": {
+                        "type": "string",
+                        "description": "The ultimate creditor's personal identification, as assigned by an identification scheme.",
+                        "minLength": 0,
+                        "maxLength": 35,
+                        "nullable": true
+                      },
+                      "schemeName": {
+                        "type": "object",
+                        "description": "Information about the identification scheme in coded form or free-form text.",
+                        "nullable": true,
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "description": "Name of the identification scheme in coded form, as specified in the PersonalIdentification1Code code set required by ISO 20022 Message Schemas. No need to specify if you are providing this name in free-form text (i.e., proprietary).",
+                            "minLength": 0,
+                            "maxLength": 4,
+                            "nullable": true
+                          },
+                          "proprietary": {
+                            "type": "string",
+                            "description": "Name of the identification scheme in free-form text. No need to specify if you are providing this name in  coded form (i.e., code).",
+                            "minLength": 0,
+                            "maxLength": 35,
+                            "nullable": true
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "PaymentRequestItem": {
+        "required": [
+          "endToEndId",
+          "reference",
+          "accountIdentifier",
+          "amount",
+          "debtorAddress",
+          "creditor",
+          "debtorAccountCurrency",
+          "debtorName"
+        ],
+        "type": "object",
+        "properties": {
+          "endToEndId": {
+            "type": "string",
+            "description": "Unique identifier provided to ClearBank for each payment.",
+            "minLength": 1,
+            "maxLength": 35
+          },
+          "reference": {
+            "type": "string",
+            "description": "Reference provided by the debtor for the payment.",
+            "minLength": 1,
+            "maxLength": 140
+          },
+          "amount": {
+            "type": "number",
+            "description": "Instructed payment amount."
+          },
+          "creditor": {
+            "$ref": "#/components/schemas/Creditor"
+          },
+          "debtorName": {
+            "type": "string",
+            "description": "The name used to identify the legal owner of the account from which the funds will be debited.",
+            "minLength": 1,
+            "maxLength": 140
+          },
+          "debtorAddress": {
+            "type": "object",
+            "description": "Information about the debtor’s address.",
+            "required": [
+              "addressLine1",
+              "addressLine2",
+              "postCode",
+              "country"
+            ],
+            "properties": {
+              "addressLine1": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70,
+                "description": "First line of the debtor’s address."
+              },
+              "addressLine2": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 35,
+                "description": "Second line of the debtor’s address."
+              },
+              "addressLine3": {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 35,
+                "description": "Third line of the debtor’s address.",
+                "nullable": true
+              },
+              "postCode": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16,
+                "description": "Debtor’s postcode."
+              },
+              "country": {
+                "minLength": 2,
+                "maxLength": 2,
+                "type": "string",
+                "description": "Two-letter ISO country code for the debtor’s address.",
+                "pattern": "^[A-Z]{2}$"
+              }
+            }
+          },
+          "debtorBic": {
+            "type": "string",
+            "description": "Debtor’s Business Identifier Code (BIC).",
+            "nullable": true
+          },
+          "debtorPrivateIdentification": {
+            "type": "object",
+            "description": "The debtor’s private or personal information.",
+            "properties": {
+              "dateAndPlaceOfBirth": {
+                "type": "object",
+                "description": "Debtor’s birth information.",
+                "properties": {
+                  "dateOfBirth": {
+                    "type": "string",
+                    "description": "Debtor’s date of birth.",
+                    "format": "date",
+                    "nullable": true
+                  },
+                  "cityOfBirth": {
+                    "type": "string",
+                    "description": "Debtor’s city of birth.",
+                    "minLength": 0,
+                    "maxLength": 35,
+                    "nullable": true
+                  },
+                  "countryOfBirth": {
+                    "type": "string",
+                    "description": "Two-letter ISO country code for the debtor’s country of birth.",
+                    "minLength": 0,
+                    "maxLength": 2,
+                    "pattern": "^[A-Z]{2}$",
+                    "nullable": true
+                  }
+                }
+              },
+              "other": {
+                "type": "object",
+                "description": "Information about the debtor’s private identification.",
+                "properties": {
+                  "identification": {
+                    "type": "string",
+                    "description": "Debtor’s personal identification, as assigned by an identification scheme.",
+                    "minLength": 0,
+                    "maxLength": 35,
+                    "nullable": true
+                  },
+                  "schemeName": {
+                    "type": "object",
+                    "description": "Information about the identification scheme in coded form or free-form text.",
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "description": "Name of the identification scheme in coded form, as specified in the PersonalIdentification1Code code set required by ISO 20022 Message Schemas. No need to specify if you are providing this name in free-form text (i.e., proprietary).",
+                        "minLength": 0,
+                        "maxLength": 4,
+                        "nullable": true
+                      },
+                      "proprietary": {
+                        "type": "string",
+                        "description": "Name of the identification scheme in free-form text. No need to specify if you are providing this name in coded form (i.e., code).",
+                        "minLength": 0,
+                        "maxLength": 35,
+                        "nullable": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "accountIdentifier": {
+            "$ref": "#/components/schemas/AccountIdentifier"
+          },
+          "debtorAccountCurrency": {
+            "type": "string",
+            "description": "Three-letter ISO currency code for the currency supported by the debtor account.  This field is case insensitive.",
+            "minLength": 3,
+            "maxLength": 3
+          },
+          "intermediaryAgent": {
+            "$ref": "#/components/schemas/IntermediaryAgent"
+          },
+          "creditorAgent": {
+            "$ref": "#/components/schemas/CreditorAgent"
+          },
+          "instructionForDebtorAgent": {
+            "type": "string",
+            "nullable": true,
+            "description": "Further information related to the processing of the payment instruction that may need to be acted upon by the debtor agent (depending on an agreement between the debtor and debtor agent). Financial institutions sending payments on behalf of their customers should populate their BIC in this field preceded by '/INST/' signifying that they are the instructing institution.",
+            "minLength": 0,
+            "maxLength": 140
+          },
+          "purpose": {
+            "$ref": "#/components/schemas/Purpose"
+          },
+          "remittanceInformation": {
+            "$ref": "#/components/schemas/RemittanceInformation"
+          },
+          "ultimateCreditor": {
+            "$ref": "#/components/schemas/UltimateCreditor"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PaymentRequest": {
+        "required": [
+          "currencyCode",
+          "transactions"
+        ],
+        "type": "object",
+        "properties": {
+          "batchId": {
+            "type": "string",
+            "description": "Unique identifier for the batch in which the payment is being submitted. (GUID format 128-bit label)",
+            "format": "uuid",
+            "nullable": true
+          },
+          "currencyCode": {
+            "type": "string",
+            "description": "Three-letter ISO currency code for the outbound payment. This field is case insensitive.",
+            "example": "EUR",
+            "minLength": 3,
+            "maxLength": 3
+          },
+          "transactions": {
+            "type": "array",
+            "description": "Array of transactions. The maximum batch size is 100.",
+            "minItems": 1,
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/PaymentRequestItem"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "PaymentResponse": {
+        "type": "object",
+        "properties": {
+          "isScheduled": {
+            "type": "boolean",
+            "description": "Whether the payment(s) are scheduled for the next payment window."
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "instance": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": {}
+      }
+    }
+  }
+}

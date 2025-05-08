@@ -2,8 +2,11 @@
 # ClearBank.NET
 
 Unofficial .NET client for ClearBank integration, creating online payments via their API.
-Bank payment handling automation in the United Kingdom. Released as a [NuGet package](https://www.nuget.org/packages/ClearBank.Net/).
+Bank payment handling automation in the United Kingdom (UK/GB) and European Union (EU). Released as a [NuGet package](https://www.nuget.org/packages/ClearBank.Net/).
 This aims to be bare and easy.
+
+The library has been structured as UK/UK.Multicurrency/EU, and aims to cover major use cases from [ClearBank developer portal](https://clearbank.github.io/uk) with simple setup in both Microsoft DotNet and Microsoft .NET Framework.
+
 
 Here are the pre-conditions:
 
@@ -14,7 +17,7 @@ Azure KeyVault supports HSM (hardware security module) backed keys.
 
 ## 2. Configure the Certificate -tab
 
-For example, use a new self-signed certificate, but the PEM format has to be selected.
+For example, a new self-signed certificate can be used, but the PEM format has to be selected.
 
 Download the certificate, a PEM-file.
 
@@ -31,7 +34,7 @@ _Update: You can also get CSR now directly from Azure keyvault, by selecting the
 
 ## (4. Optional: Ensure the correctness with FI-API-Signtool)
 
-The signing is done similarly than in this repo, but the official code is more messy as it's C#.
+The signing is done similarly to this repo, but the official code is more messy because it's C#.
 [GitHub - clearbank/fi-api-signtool](https://github.com/clearbank/fi-api-signtool)
 
 ## 5. Start using this library
@@ -39,6 +42,7 @@ The signing is done similarly than in this repo, but the official code is more m
 Your user code should look something like this:
 
 ```fsharp
+
 let doSomeTransactions =
     let clearbankDefaultConfig =
         {
@@ -46,36 +50,38 @@ let doSomeTransactions =
             PrivateKey = "..."
             AzureKeyVaultName =  "myVault"
             AzureKeyVaultCredentials = DefaultCredentials
-        } : ClearbankConfigruation
+        } : ClearBank.Common.ClearbankConfigruation
 
     let azureKeyVaultCertificateName = "my-cert"
-    let fromAccount = UK_Domestic("60-01-34", "51112345")
+    let fromAccount = ClearBank.Common.UK_Domestic("60-01-34", "51112345")
 
     let target1 = 
-        {
-            To = UK_Domestic("20-20-15", "55555555")
-            AccountHolder = "Mr Test"
-            Sum = 123.00m
-            Currency = "GBP"
-            Description = "Phone Bill"
-            PaymentReference = "123456789"
-            TransactionId = "12345" // End-to-end: You identify corresponding webhooks with this.
-        } |> ClearBank.createCreditTransfer
+        ClearBank.UK.createCreditTransfer
+            {
+                To = ClearBank.Common.UK_Domestic("20-20-15", "55555555")
+                AccountHolder = "Mr Test"
+                Sum = 123.00m
+                Currency = "GBP"
+                Description = "Phone Bill"
+                PaymentReference = "123456789"
+                TransactionId = "12345" // End-to-end: You identify corresponding webhooks with this.
+            }
 
     let target2 = 
-        {
-            To = UK_Domestic("40-47-84", "70872490")
-            AccountHolder = "John Doe"
-            Sum = 123.00m
-            Currency = "GBP"
-            Description = "Some money"
-            PaymentReference = "12345"
-            TransactionId = "12345"
-        } |> ClearBank.createCreditTransfer
+        ClearBank.UK.createCreditTransfer
+            {
+                To = ClearBank.Common.UK_Domestic("40-47-84", "70872490")
+                AccountHolder = "John Doe"
+                Sum = 123.00m
+                Currency = "GBP"
+                Description = "Some money"
+                PaymentReference = "12345"
+                TransactionId = "12345"
+            }
 
     let xReqId = Guid.NewGuid()
-    let instructions = ClearBank.createPaymentInstruction "Batch123" fromAccount  [| target1 ; target2 |]
-    ClearBank.transferPayments clearbankDefaultConfig azureKeyVaultCertificateName xReqId [| instructions |] |> Async.RunSynchronously
+    let instructions = ClearBank.UK.createPaymentInstruction "Batch123" fromAccount  [| target1 ; target2 |]
+    ClearBank.UK.transferPayments clearbankDefaultConfig azureKeyVaultCertificateName xReqId [| instructions |] |> Async.RunSynchronously
 
 ```
 
@@ -100,14 +106,14 @@ If you have problems with the KeyVault authentication, you can change the AzureK
                         //,ExcludeInteractiveBrowserCredential = true
                     )) 
             LogUnsuccessfulHandler = None
-        } : ClearbankConfiguration
+        } : ClearBank.Common.ClearbankConfiguration
 ```
 
 The last `LogUnsuccessfulHandler` property is an optional error-logging callback. You could replace it e.g. with `Some logging` and have a function:
 
 ```fsharp
     let logging(status,content) =
-        match ClearBank.parseClarBankErrorContent content with
+        match ClearBank.Common.parseClarBankErrorContent content with
         | ClearBankEmptyResponse -> Console.WriteLine "Response was empty"
         | ClearBankTransactionError errors -> errors |> Seq.iter(fun (tid,err) -> Console.WriteLine("Transaction id " + tid + " failed for " + err))
         | ClearBankGeneralError(title, detail) -> Console.WriteLine(title + ", " + detail)
@@ -116,12 +122,12 @@ The last `LogUnsuccessfulHandler` property is an optional error-logging callback
 
 ### Creating accounts
 
-There is a method `ClearBank.createNewAccount` to create new accounts.
+There is a method `ClearBank.UK.createNewAccount` to create new accounts.
 
 ### Getting accounts and transactions
 
-There are methods `ClearBank.getAccounts`, that you can use for e.g. getting balances, 
-and `ClearBank.getTransactions` config pageSize pageNumber startDate endDate
+There are methods `ClearBank.UK.getAccounts`, that you can use for e.g. getting balances, 
+and `ClearBank.UK.getTransactions` config pageSize pageNumber startDate endDate
 
 ### Webhook responses
 
@@ -144,24 +150,24 @@ type CBWebhookController() as this =
             let signature = this.Request.Headers.GetValues("DigitalSignature") |> Seq.tryHead |> Option.map Convert.FromBase64String //add some error handling
             let! bodyJson = this.Request.Content.ReadAsStringAsync() |> Async.AwaitTask
 
-            let! isVerified = ClearBank.verifySignature publicKeyXml signature bodyJson //proceed only if true
+            let! isVerified = ClearBank.Common.verifySignature publicKeyXml signature bodyJson //proceed only if true
 
             // 2. Parse and handle the request:
-            let parsed = ClearBankWebhooks.parsePaymentsCall bodyJson
+            let parsed = ClearBank.Webhooks.parsePaymentsCallUK bodyJson
 
             // Use parsed.Type to get the webhook type.
             // Different types may have the corresponding end-to-end transactionId in different places.
             // Fetch your transaction based on that ID, and do whatever you want.
 
             //    match parsed.Type with
-            //    | "TransactionSettled" -> ...
-            //    | "PaymentMessageAssessmentFailed" -> ...
-            //    | "PaymentMessageValidationFailed" -> ...
-            //    | "TransactionRejected" -> ...
+            //    | ClearBank.Webhooks.WebhookTypes.UK.TransactionSettled -> ...
+            //    | ClearBank.Webhooks.WebhookTypes.UK.PaymentMessageAssessmentFailed -> ...
+            //    | ClearBank.Webhooks.WebhookTypes.UK.PaymentMessageValidationFailed -> ...
+            //    | ClearBank.Webhooks.WebhookTypes.UK.TransactionRejected -> ...
             //    | _ -> (* "FITestEvent" *) ...
 
             // 3. Create response
-            return! ClearBankWebhooks.createResponse clearbankDefaultConfig azureKeyVaultCertificateName this.Request parsed.Nonce
+            return! ClearBank.Webhooks.createResponse clearbankDefaultConfig azureKeyVaultCertificateName this.Request parsed.Nonce
 
         } |> Async.StartAsTask
 ```
