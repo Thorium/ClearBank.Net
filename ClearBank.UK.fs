@@ -140,7 +140,7 @@ let createNewAccount config azureKeyVaultCertificateName (requestId:Guid) (sortC
     let req =
         let owner = AccountsV3.PartyIdentification(ownerName)
         AccountsV3.CreateAccountRequest(accountName, owner, (sortCode.Replace("-", "")))
-    let requestIdS = requestId.ToString("N") //todo, unique, save to db
+    let requestIdS = requestId.ToString "N" //todo, unique, save to db
 
     let httpClient =
         if config.LogUnsuccessfulHandler.IsNone then
@@ -247,7 +247,7 @@ let transferPayments config azureKeyVaultCertificateName (requestId:Guid) paymen
 
     let req = FpsPaymentsV3.BatchCreateCreditTransferRequest(
                 paymentInstructions = paymentInstructions)
-    let requestIdS = requestId.ToString("N") //todo, unique, save to db
+    let requestIdS = requestId.ToString "N" //todo, unique, save to db
     let httpClient =
         if config.LogUnsuccessfulHandler.IsNone then
             new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
@@ -302,15 +302,15 @@ module MultiCurrency =
 
     let ISOCurrencySymbols() =
         System.Globalization.CultureInfo.GetCultures(System.Globalization.CultureTypes.SpecificCultures)
-        |> Array.map(fun ci -> ci.Name) |> Array.distinct |> Array.map(fun cid -> System.Globalization.RegionInfo cid)
-        |> Array.map(fun g -> g.ISOCurrencySymbol) |> Array.distinct
+        |> Array.map(fun ci -> ci.Name) |> Array.distinct |> Array.map (System.Globalization.RegionInfo >> fun g -> g.ISOCurrencySymbol)
+        |> Array.distinct
 
     /// Creates a new account
     let createNewAccount config azureKeyVaultCertificateName (requestId:Guid) (sortcode:string) accountName ownerName (accountKind:AccountKind) isoCurrencySymbols identifiers productId customerId =
         let routingCode = MccyTransactionsV1.RoutingCode(sortcode.Replace("-", "").Replace(" ", ""), "GBSortCode")
         let req =
             MccyTransactionsV1.CreateAccountRequest(accountName, ownerName, (accountKind.ToString()), isoCurrencySymbols, routingCode, identifiers, productId, customerId)
-        let requestIdS = requestId.ToString("N") //todo, unique, save to db
+        let requestIdS = requestId.ToString "N" //todo, unique, save to db
 
         let httpClient =
             if config.LogUnsuccessfulHandler.IsNone then
@@ -389,6 +389,209 @@ module MultiCurrency =
                 return Error(err, details)
         }
 
+    /// Get a specific account by ID
+    let getAccount config (accountId:Guid) =
+
+        let httpClient =
+            if config.LogUnsuccessfulHandler.IsNone then
+                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+            else
+                let handler1 = new HttpClientHandler (UseCookies = false)
+                let handler2 = new ErrorHandler(handler1)
+                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+        let client = MccyTransactionsV1.Client httpClient
+
+        async {
+            let authToken = "Bearer " + config.PrivateKey
+            let! r = client.GetMccyV1Account(authToken, accountId) |> Async.Catch
+            httpClient.Dispose()
+            match r with
+            | Choice1Of2 x -> return Ok x
+            | Choice2Of2 err ->
+                let details = getErrorDetails err
+                return Error(err, details)
+        }
+
+    /// Get account balances for all currencies
+    let getAccountBalances config (accountId:Guid) =
+
+        let httpClient =
+            if config.LogUnsuccessfulHandler.IsNone then
+                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+            else
+                let handler1 = new HttpClientHandler (UseCookies = false)
+                let handler2 = new ErrorHandler(handler1)
+                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+        let client = MccyTransactionsV1.Client httpClient
+
+        async {
+            let authToken = "Bearer " + config.PrivateKey
+            let! r = client.GetMccyV1AccountBalances(accountId, authToken) |> Async.Catch
+            httpClient.Dispose()
+            match r with
+            | Choice1Of2 x -> return Ok x
+            | Choice2Of2 err ->
+                let details = getErrorDetails err
+                return Error(err, details)
+        }
+
+    /// Get a specific transaction by ID
+    let getTransaction config (transactionId:Guid) =
+
+        let httpClient =
+            if config.LogUnsuccessfulHandler.IsNone then
+                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+            else
+                let handler1 = new HttpClientHandler (UseCookies = false)
+                let handler2 = new ErrorHandler(handler1)
+                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+        let client = MccyTransactionsV1.Client httpClient
+
+        async {
+            let authToken = "Bearer " + config.PrivateKey
+            let! r = client.GetMccyV1Transaction(transactionId, authToken) |> Async.Catch
+            httpClient.Dispose()
+            match r with
+            | Choice1Of2 x -> return Ok x
+            | Choice2Of2 err ->
+                let details = getErrorDetails err
+                return Error(err, details)
+        }
+
+    /// Update account details
+    let updateAccount config azureKeyVaultCertificateName (requestId:Guid) (accountId:Guid) updateRequest =
+
+        let requestIdS = requestId.ToString("N")
+        let httpClient =
+            if config.LogUnsuccessfulHandler.IsNone then
+                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+            else
+                let handler1 = new HttpClientHandler (UseCookies = false)
+                let handler2 = new ErrorHandler(handler1)
+                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+        let client = MccyTransactionsV1.Client httpClient
+
+        async {
+            let authToken = "Bearer " + config.PrivateKey
+            let toHash = client.Serialize updateRequest
+            let! signature_bodyhash_string = calculateSignature config azureKeyVaultCertificateName toHash |> Async.AwaitTask
+
+            let subscription =
+                if config.LogUnsuccessfulHandler.IsSome then
+                    Some (reportUnsuccessfulEvents requestIdS config.LogUnsuccessfulHandler.Value)
+                else None
+            let! r = client.PatchMccyV1Account(accountId, requestIdS, authToken, signature_bodyhash_string, updateRequest) |> Async.Catch
+            httpClient.Dispose()
+            if subscription.IsSome then
+                subscription.Value.Dispose()
+            match r with
+            | Choice1Of2 x -> return Ok x
+            | Choice2Of2 err ->
+                let details = getErrorDetails err
+                return Error(err, details)
+        }
+
+    /// Update account status (enable/disable)
+    let updateAccountStatus config azureKeyVaultCertificateName (requestId:Guid) (accountId:Guid) statusRequest =
+
+        let requestIdS = requestId.ToString("N")
+        let httpClient =
+            if config.LogUnsuccessfulHandler.IsNone then
+                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+            else
+                let handler1 = new HttpClientHandler (UseCookies = false)
+                let handler2 = new ErrorHandler(handler1)
+                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+        let client = MccyTransactionsV1.Client httpClient
+
+        async {
+            let authToken = "Bearer " + config.PrivateKey
+            let toHash = client.Serialize statusRequest
+            let! signature_bodyhash_string = calculateSignature config azureKeyVaultCertificateName toHash |> Async.AwaitTask
+
+            let subscription =
+                if config.LogUnsuccessfulHandler.IsSome then
+                    Some (reportUnsuccessfulEvents requestIdS config.LogUnsuccessfulHandler.Value)
+                else None
+            let! r = client.PatchMccyV1AccountStatus(accountId, requestIdS, authToken, signature_bodyhash_string, statusRequest) |> Async.Catch
+            httpClient.Dispose()
+            if subscription.IsSome then
+                subscription.Value.Dispose()
+            match r with
+            | Choice1Of2 x -> return Ok x
+            | Choice2Of2 err ->
+                let details = getErrorDetails err
+                return Error(err, details)
+        }
+
+    /// Add currency to an existing account
+    let addCurrency config azureKeyVaultCertificateName (requestId:Guid) (accountId:Guid) addCurrencyRequest =
+
+        let requestIdS = requestId.ToString("N")
+        let httpClient =
+            if config.LogUnsuccessfulHandler.IsNone then
+                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+            else
+                let handler1 = new HttpClientHandler (UseCookies = false)
+                let handler2 = new ErrorHandler(handler1)
+                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+        let client = MccyTransactionsV1.Client httpClient
+
+        async {
+            let authToken = "Bearer " + config.PrivateKey
+            let toHash = client.Serialize addCurrencyRequest
+            let! signature_bodyhash_string = calculateSignature config azureKeyVaultCertificateName toHash |> Async.AwaitTask
+
+            let subscription =
+                if config.LogUnsuccessfulHandler.IsSome then
+                    Some (reportUnsuccessfulEvents requestIdS config.LogUnsuccessfulHandler.Value)
+                else None
+            let! r = client.PostMccyV1AccountCurrencies(accountId, requestIdS, authToken, signature_bodyhash_string, addCurrencyRequest) |> Async.Catch
+            httpClient.Dispose()
+            if subscription.IsSome then
+                subscription.Value.Dispose()
+            match r with
+            | Choice1Of2 x -> return Ok x
+            | Choice2Of2 err ->
+                let details = getErrorDetails err
+                return Error(err, details)
+        }
+
+    /// Delete/close an account (optionally with a reason)
+    /// Note: DELETE operations don't require signature but do require authentication
+    let deleteAccount config (requestId:Guid) (accountId:Guid) (closeReason:string option) =
+
+        let requestIdS = requestId.ToString "N"
+        let httpClient =
+            if config.LogUnsuccessfulHandler.IsNone then
+                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+            else
+                let handler1 = new HttpClientHandler (UseCookies = false)
+                let handler2 = new ErrorHandler(handler1)
+                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+        let client = MccyTransactionsV1.Client httpClient
+
+        async {
+            let subscription =
+                if config.LogUnsuccessfulHandler.IsSome then
+                    Some (reportUnsuccessfulEvents requestIdS config.LogUnsuccessfulHandler.Value)
+                else None
+            // DeleteMccyV1Account signature: (accountId: Guid, xRequestId: string, ?accountCloseReason: string)
+            // Note: This API method doesn't take auth token - authentication is handled differently for DELETE
+            let! r = 
+                match closeReason with
+                | Some reason -> client.DeleteMccyV1Account(accountId, requestIdS, reason) |> Async.Catch
+                | None -> client.DeleteMccyV1Account(accountId, requestIdS) |> Async.Catch
+            httpClient.Dispose()
+            if subscription.IsSome then
+                subscription.Value.Dispose()
+            match r with
+            | Choice1Of2 x -> return Ok x
+            | Choice2Of2 err ->
+                let details = getErrorDetails err
+                return Error(err, details)
+        }
+
 
     type InternationalPaymentTransfer = {
         To: BankAccount
@@ -400,69 +603,12 @@ module MultiCurrency =
         TransactionId: string
     }
 
-    ///// Creates credit transfer for createPaymentInstruction
-    //let createPaymentInstruction (payment:PaymentTransfer) =
-    //    MccyPaymentsV1.PaymentRequestItem(
-    //        payment.TransactionId, payment.PaymentReference, Convert.ToSingle(payment.Sum),
-    //        payment.AccountHolder,
-    //            ), payment.AccountHolder,
-    //        MccyPaymentsV1.PaymentRequestItem_DebtorAddress(),
-    //        MccyPaymentsV1.AccountIdentifier(), payment.Currency)
-
-
-        //    paymentIdentification = FpsPaymentsV3.BatchPaymentIdentification(
-        //                                payment.Description, // instructionIdentification
-        //                                payment.TransactionId // endToEndIdentification
-        //                            ),
-
-        //    amount = FpsPaymentsV3.BatchAmount(Convert.ToDouble(payment.Sum), payment.Currency),
-        //    creditor = FpsPaymentsV3.BatchCreditorPartyIdentifier(payment.AccountHolder (*, "legalEntityIdentifier"*)),
-        //    creditorAccount = FpsPaymentsV3.BatchPaymentInstructionCounterpartAccount(
-        //        identification = ``account to string`` payment.To),
-        //    remittanceInformation =
-        //        FpsPaymentsV3.BatchRemittanceInformation(structured =
-        //            FpsPaymentsV3.BatchStructured(creditorReferenceInformation =
-        //                FpsPaymentsV3.BatchCreditorReferenceInformation(payment.PaymentReference // reference
-
-        //            )
-        //        )
-        //    )
-
-        /// Creates payment instructions from createCreditTransfer for transferPayments
-
-        //let createPaymentInstruction address legalEntityIdentifier batchId account transfers =
-
-        //let createPaymentInstruction (address:MccyPaymentsV1.PaymentRequestItem_DebtorAddress) legalEntityIdentifier batchId account transfers =
-
-        //    let req =
-
-        //        MccyPaymentsV1.PaymentRequestItem(
-        //            payment.TransactionId, payment.PaymentReference, Convert.ToSingle(payment.Sum),
-        //            payment.AccountHolder, address
-        //                ), payment.AccountHolder,
-        //            MccyPaymentsV1.PaymentRequestItem_DebtorAddress(),
-        //            MccyPaymentsV1.AccountIdentifier(), payment.Currency)
-
-
-        //        //MccyPaymentsV1.PaymentRequestItem(
-        //        //    debtor = FpsPaymentsV3.BatchDebtorPartyIdentifier(
-        //        //        address = address,
-        //        //        legalEntityIdentifier = (legalEntityIdentifier |> Option.defaultValue "")),
-        //        //    paymentInstructionIdentification = batchId,
-        //        //    debtorAccount = FpsPaymentsV3.BatchPaymentInstructionCounterpartAccount(
-        //        //        identification = ``account to string`` account
-        //        //        ),
-        //        //    creditTransfers = transfers
-        //        //)
-        //    req
-
-
-    /// Post payments created with createPaymentInstruction
+    /// Post payments created with MccyPaymentsV1.PaymentRequestItem
     let transferPayments config azureKeyVaultCertificateName (requestId:Guid) batchId isoCurrencyCode paymentInstructions =
 
         let req = MccyPaymentsV1.PaymentRequest(isoCurrencyCode, paymentInstructions, batchId)
             
-        let requestIdS = requestId.ToString("N")
+        let requestIdS = requestId.ToString "N"
         let httpClient =
             if config.LogUnsuccessfulHandler.IsNone then
                 new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)

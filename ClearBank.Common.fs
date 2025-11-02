@@ -33,7 +33,7 @@ type BankAccount =
 // Amount - required, must be numeric and greater than 0
 // Payment Reference - required, alphanumeric, space, comma, full stop, a hyphen, maximum length 18 characters (Description to be provided -if the customer exceeds 18 characters this will be truncated)
 
-let unSuccessStatusCode = new Event<_>() // id, status, content
+let unSuccessStatusCode = Event<_>() // id, status, content
 type ErrorHandler(messageHandler) =
     inherit DelegatingHandler(messageHandler)
     override __.SendAsync(request, cancellationToken) =

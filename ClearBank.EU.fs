@@ -19,7 +19,7 @@ type T2V1 = OpenApiClientProvider<t2V1, PreferAsync=true>
 /// Post SEPA payments created with SepaV1.CreateSepaOutboundPaymentRequest(...)
 let sepaTransferPayments config azureKeyVaultCertificateName (requestId:Guid) sepaOutboundPaymentRequest =
 
-    let requestIdS = requestId.ToString("N") //todo, unique, save to db
+    let requestIdS = requestId.ToString "N" //todo, unique, save to db
     let httpClient =
         if config.LogUnsuccessfulHandler.IsNone then
             new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
@@ -58,7 +58,7 @@ let sepaTransferPayments config azureKeyVaultCertificateName (requestId:Guid) se
 /// Post SEPA instant payments created with SepaInstantV1.CreateSepaOutboundPaymentRequest(...)
 let sepaInstantTransferPayments config azureKeyVaultCertificateName (requestId:Guid) sepaOutboundPaymentRequest =
     
-    let requestIdS = requestId.ToString("N") //todo, unique, save to db
+    let requestIdS = requestId.ToString "N" //todo, unique, save to db
     let httpClient =
         if config.LogUnsuccessfulHandler.IsNone then
             new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
@@ -97,7 +97,7 @@ let sepaInstantTransferPayments config azureKeyVaultCertificateName (requestId:G
 /// Post SEPA CT recall response created with SepaV1.RecallOfInboundPaymentReviewRequest(...)
 let sepaRecallResponse config azureKeyVaultCertificateName (requestId:Guid) recallResponseRequest =
     
-    let requestIdS = requestId.ToString("N") //todo, unique, save to db
+    let requestIdS = requestId.ToString "N" //todo, unique, save to db
     let httpClient =
         if config.LogUnsuccessfulHandler.IsNone then
             new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
@@ -133,7 +133,7 @@ let sepaRecallResponse config azureKeyVaultCertificateName (requestId:Guid) reca
 /// Post SEPA CT payment recall request created with SepaV1.RecallOfOutboundPaymentRequest(...)
 let sepaRecallRequest config azureKeyVaultCertificateName (requestId:Guid) recallRequest =
     
-    let requestIdS = requestId.ToString("N") //todo, unique, save to db
+    let requestIdS = requestId.ToString "N" //todo, unique, save to db
     let httpClient =
         if config.LogUnsuccessfulHandler.IsNone then
             new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
@@ -169,7 +169,7 @@ let sepaRecallRequest config azureKeyVaultCertificateName (requestId:Guid) recal
 /// Post SEPA CT payment return created with SepaV1.ReturnOfInboundPaymentRequest(...)
 let sepaPaymentReturn config azureKeyVaultCertificateName (requestId:Guid) paymentReturnRequest =
     
-    let requestIdS = requestId.ToString("N") //todo, unique, save to db
+    let requestIdS = requestId.ToString "N" //todo, unique, save to db
     let httpClient =
         if config.LogUnsuccessfulHandler.IsNone then
             new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
@@ -205,7 +205,7 @@ let sepaPaymentReturn config azureKeyVaultCertificateName (requestId:Guid) payme
 /// Post SEPA Instant recall response created with SepaInstantV1.RecallResponseReceived(...)
 let sepaInstantRecallResponse config azureKeyVaultCertificateName (requestId:Guid) (paymentId:Guid) recallResponseRequest =
     
-    let requestIdS = requestId.ToString("N") //todo, unique, save to db
+    let requestIdS = requestId.ToString "N" //todo, unique, save to db
     let httpClient =
         if config.LogUnsuccessfulHandler.IsNone then
             new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
@@ -241,7 +241,7 @@ let sepaInstantRecallResponse config azureKeyVaultCertificateName (requestId:Gui
 /// Post SEPA Instant recall request created with SepaInstantV1.CreateRequestForRecallRequest(...)
 let sepaInstantRecallRequest config azureKeyVaultCertificateName (requestId:Guid) (paymentId:Guid) recallRequest =
     
-    let requestIdS = requestId.ToString("N") //todo, unique, save to db
+    let requestIdS = requestId.ToString "N" //todo, unique, save to db
     let httpClient =
         if config.LogUnsuccessfulHandler.IsNone then
             new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
@@ -279,7 +279,7 @@ module Target2 =
     /// Post T2-RTGS institution payment created with T2V1.InstitutionPayments.InstitutionPaymentRequest(...)
     let institutionPayment config azureKeyVaultCertificateName (requestId:Guid) institutionPaymentRequest =
         
-        let requestIdS = requestId.ToString("N") //todo, unique, save to db
+        let requestIdS = requestId.ToString "N" //todo, unique, save to db
         let httpClient =
             if config.LogUnsuccessfulHandler.IsNone then
                 new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
@@ -315,7 +315,7 @@ module Target2 =
     /// Post T2-RTGS customer payment created with T2V1.CustomerPayments.CustomerPaymentRequest(...)
     let customerPayment config azureKeyVaultCertificateName (requestId:Guid) customerPaymentRequest =
         
-        let requestIdS = requestId.ToString("N") //todo, unique, save to db
+        let requestIdS = requestId.ToString "N" //todo, unique, save to db
         let httpClient =
             if config.LogUnsuccessfulHandler.IsNone then
                 new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
@@ -351,7 +351,7 @@ module Target2 =
     /// Post T2-RTGS payment return created with T2V1.PaymentReturns.PaymentReturnRequest(...)
     let paymentReturn config azureKeyVaultCertificateName (requestId:Guid) paymentReturnRequest =
         
-        let requestIdS = requestId.ToString("N") //todo, unique, save to db
+        let requestIdS = requestId.ToString "N" //todo, unique, save to db
         let httpClient =
             if config.LogUnsuccessfulHandler.IsNone then
                 new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
