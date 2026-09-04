@@ -33,7 +33,8 @@ type BankAccount =
 // Amount - required, must be numeric and greater than 0
 // Payment Reference - required, alphanumeric, space, comma, full stop, a hyphen, maximum length 18 characters (Description to be provided -if the customer exceeds 18 characters this will be truncated)
 
-let unSuccessStatusCode = Event<_>() // id, status, content
+/// id, status, content
+let unSuccessStatusCode = Event<_>()
 type ErrorHandler(messageHandler) =
     inherit DelegatingHandler(messageHandler)
     override __.SendAsync(request, cancellationToken) =
@@ -42,7 +43,7 @@ type ErrorHandler(messageHandler) =
             let! result = resp |> Async.AwaitTask
             if not result.IsSuccessStatusCode then
                 let! cont = result.Content.ReadAsStringAsync() |> Async.AwaitTask
-                let hasId, idvals = request.Headers.TryGetValues("X-Request-ID") // Some unique id
+                let hasId, idvals = request.Headers.TryGetValues "X-Request-ID" // Some unique id
                 unSuccessStatusCode.Trigger(
                     (if not hasId then None else idvals |> Seq.tryHead),
                     result.StatusCode,
@@ -85,7 +86,8 @@ type ClearBankErrorResponse = ClearBankErrorJson.Root
 
 type ClearBankErrorStyle =
 | ClearBankEmptyResponse
-| ClearBankTransactionError of Errors: (string * string) seq //id and reason
+///id and reason
+| ClearBankTransactionError of Errors: (string * string) seq
 | ClearBankGeneralError of Title: string * Detail: string
 | ClearBankUnknownError of Content: string
 
@@ -97,9 +99,9 @@ let parseClearBankErrorContent(content:string) =
     try
         let parsed =
             ClearBankErrorJson.Parse content
-        match parsed.Transactions |> Seq.tryHead with
+        match parsed.Transactions |> Array.tryHead with
         | Some t -> parsed.Transactions |> Seq.map(fun t -> t.EndToEndIdentification, t.Response) |> ClearBankTransactionError
-        | _ ->
+        | None ->
             if parsed.Title.IsSome && parsed.Detail.IsSome && (not (String.IsNullOrEmpty parsed.Title.Value)) then
                 (parsed.Title.Value, parsed.Detail.Value) |> ClearBankGeneralError
             else
@@ -143,7 +145,7 @@ let rec internal getErrorDetails : Exception -> string = function
         let content = e.Content.ReadAsStringAsync() |> Async.AwaitTask |> Async.RunSynchronously
         content
     | :? AggregateException as aex -> getErrorDetails (aex.GetBaseException())
-    | :? WebException as wex when not(isNull(wex.Response)) ->
+    | :? WebException as wex when not(isNull wex.Response) ->
         use stream = wex.Response.GetResponseStream()
         use reader = new System.IO.StreamReader(stream)
         let err = reader.ReadToEnd()

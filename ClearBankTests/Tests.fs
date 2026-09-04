@@ -12,8 +12,8 @@ module TestHelpers =
     let logging(status,content) =
         match parseClearBankErrorContent content with
         | ClearBankEmptyResponse -> Console.WriteLine "Response was empty"
-        | ClearBankTransactionError errors -> errors |> Seq.iter(fun (tid,err) -> Console.WriteLine("Transaction id " + tid + " failed for " + err))
-        | ClearBankGeneralError(title, detail) -> Console.WriteLine(title + ", " + detail)
+        | ClearBankTransactionError errors -> errors |> Seq.iter(fun (tid,err) -> Console.WriteLine($"Transaction id {tid} failed for {err}"))
+        | ClearBankGeneralError(title, detail) -> Console.WriteLine($"{title}, {detail}")
         | ClearBankUnknownError content -> Console.WriteLine("JSON: " + content)
 
     let clearbankDefaultConfig =
@@ -42,7 +42,7 @@ module TestHelpers =
 
             Assert.IsTrue true
         | Error (err:Exception,details) ->
-            Assert.Fail(err.Message + ", " + details)
+            Assert.Fail($"{err.Message}, {details}")
 
 [<TestClass>]
 type ``UK Tests`` () =
@@ -100,42 +100,40 @@ type ``UK Tests`` () =
     [<TestMethod>]
     member this.GetAccountsTest () =
         task {
-            let! actual = ClearBank.UK.getAccounts clearbankDefaultConfig
-            match actual with
+            match! ClearBank.UK.getAccounts clearbankDefaultConfig with
             | Ok x ->
                 let accountBalances =
                     x.Accounts
                     |> Array.collect (fun a ->
                         a.Balances |> Array.map(fun b ->
-                            (if a.Name = b.Name then a.Name else a.Name + " - " + b.Name) + ": " +
-                            b.Amount.ToString("F") + " " + b.Currency))
+                            (if a.Name = b.Name then a.Name else $"{a.Name} - {b.Name}") + ": " +
+                            b.Amount.ToString "F" + " " + b.Currency))
 
                 Assert.AreNotEqual(0, accountBalances.Length)
                 Assert.AreNotEqual("",accountBalances.[0])
                 Assert.AreNotEqual("",String.Join("\r\n", accountBalances))
  
             | Error (err:Exception,details) ->
-                Assert.Fail(err.Message + ", " + details)
+                Assert.Fail($"{err.Message}, {details}")
         } :> System.Threading.Tasks.Task
 
     [<TestMethod>]
     member this.GetTransactionsTest () =
         task {
-            let! actual = ClearBank.UK.getTransactions clearbankDefaultConfig (Some 1000) None None None
-            match actual with
+            match! ClearBank.UK.getTransactions clearbankDefaultConfig (Some 1000) None None None with
             | Ok x ->
                 let transactions =
                     x.Transactions
                     |> Array.map (fun t ->
                          t.TransactionTime.ToString() + " " + t.EndToEndIdentifier + ": " +
                          t.CounterpartAccount.Identification.SortCode  + " " + t.CounterpartAccount.Identification.AccountNumber  + " " +
-                            t.Amount.InstructedAmount.ToString("F") + " " + t.Amount.Currency + ", " + t.TransactionReference)
+                            t.Amount.InstructedAmount.ToString "F" + " " + t.Amount.Currency + ", " + t.TransactionReference)
                 let str = String.Join("\r\n", transactions)
                 Assert.AreNotEqual(0, transactions.Length)
                 Assert.AreNotEqual("",str)
  
             | Error (err:Exception,details) ->
-                Assert.Fail(err.Message + ", " + details)
+                Assert.Fail($"{err.Message}, {details}")
         } :> System.Threading.Tasks.Task
 
     [<TestMethod>]
@@ -178,13 +176,12 @@ type ``UK MultiCurrency Tests`` () =
     [<TestMethod; Ignore("Not tested yet: No credentials")>]
     member this.GetAccountsTest () =
         task {
-            let! actual = ClearBank.UK.MultiCurrency.getAccounts clearbankDefaultConfig
-            match actual with
+            match! ClearBank.UK.MultiCurrency.getAccounts clearbankDefaultConfig with
             | Ok x ->
                 let accounts =
                     x.Accounts
                     |> Array.map (fun a ->
-                        $"{a.Name} %A{a.Currencies} status {a.Status}: {a.StatusInformation}")
+                        $"%s{a.Name} %A{a.Currencies} status %s{a.Status}: %s{a.StatusInformation}")
 
                 Assert.AreNotEqual(0, accounts.Length)
                 Assert.AreNotEqual("",accounts.[0])
@@ -194,7 +191,7 @@ type ``UK MultiCurrency Tests`` () =
                 if err.Message = "One or more errors occurred. (Response status code does not indicate success: 404 (Not Found).)" then
                     // Might be an error, or might be that no multi-currency accounts have been created!
                     ()
-                else Assert.Fail(err.Message + ", " + details)
+                else Assert.Fail($"{err.Message}, {details}")
         } :> System.Threading.Tasks.Task
 
 
@@ -210,139 +207,139 @@ type ``UK MultiCurrency Tests`` () =
 
     [<TestMethod; Ignore("Not a valid account id")>]
     member this.ProcessPaymentsTest () =
-        task {
+        let expected = Ok ()
 
-            let expected = Ok ()
+        let currency =  "EUR" // ClearBank.MultiCurrency.ISOCurrencySymbols()
+        let creditorCountry = "FI"
+        let deptorCountry = "FI"
 
-            let currency =  "EUR" // ClearBank.MultiCurrency.ISOCurrencySymbols()
-            let creditorCountry = "FI"
-            let deptorCountry = "FI"
+        let xreq = Guid.NewGuid()
+        let batchId = Some (Guid.NewGuid())
 
-            let xreq = Guid.NewGuid()
-            let batchId = Some (Guid.NewGuid())
+        let creditorAccount = ClearBank.Common.BankAccount.UK_Domestic("20-20-15", "55555555")
+        let account = ClearBank.Common.BankAccount.UK_Domestic("20-20-15", "55555555")
 
-            let creditorAccount = ClearBank.Common.BankAccount.UK_Domestic("20-20-15", "55555555")
-            let account = ClearBank.Common.BankAccount.UK_Domestic("20-20-15", "55555555")
+        let creditorIban, creditorAccountnumber, creditorScheme, creditorInstitutionScheme, creditorPrivateScheme, ultimateInstitutionScheme, ultimatePrivateScheme =
+            match creditorAccount with
+            | ClearBank.Common.BankAccount.IBAN x -> x, null, UKM.Creditor_SchemeName(null, "IBAN"), UKM.Creditor_Identification_OrganisationIdentification_Other_SchemeName(null, "IBAN"), UKM.Creditor_Identification_PrivateIdentification_Other_SchemeName(null, "IBAN"), UKM.UltimateCreditor_Identification_OrganisationIdentification_Other_SchemeName(null, "IBAN"), UKM.UltimateCreditor_Identification_PrivateIdentification_Other_SchemeName(null, "IBAN")
+            | ClearBank.Common.BankAccount.BBAN x -> null, x, UKM.Creditor_SchemeName(null, "BBAN"), UKM.Creditor_Identification_OrganisationIdentification_Other_SchemeName(null, "BBAN"), UKM.Creditor_Identification_PrivateIdentification_Other_SchemeName(null, "BBAN"), UKM.UltimateCreditor_Identification_OrganisationIdentification_Other_SchemeName(null, "BBAN"), UKM.UltimateCreditor_Identification_PrivateIdentification_Other_SchemeName(null, "BBAN")
+            | ClearBank.Common.BankAccount.UK_Domestic(x, y) -> null, x.Replace("-", "").Replace(" ", "") + y, UKM.Creditor_SchemeName(null, "PRTY_COUNTRY_SPECIFIC"), UKM.Creditor_Identification_OrganisationIdentification_Other_SchemeName(null, "PRTY_COUNTRY_SPECIFIC"), UKM.Creditor_Identification_PrivateIdentification_Other_SchemeName(null, "PRTY_COUNTRY_SPECIFIC"), UKM.UltimateCreditor_Identification_OrganisationIdentification_Other_SchemeName(null, "PRTY_COUNTRY_SPECIFIC"), UKM.UltimateCreditor_Identification_PrivateIdentification_Other_SchemeName(null, "PRTY_COUNTRY_SPECIFIC")
 
-            let creditorIban, creditorAccountnumber, creditorScheme, creditorInstitutionScheme, creditorPrivateScheme, ultimateInstitutionScheme, ultimatePrivateScheme =
-                match creditorAccount with
-                | ClearBank.Common.BankAccount.IBAN x -> x, null, UKM.Creditor_SchemeName(null, "IBAN"), UKM.Creditor_Identification_OrganisationIdentification_Other_SchemeName(null, "IBAN"), UKM.Creditor_Identification_PrivateIdentification_Other_SchemeName(null, "IBAN"), UKM.UltimateCreditor_Identification_OrganisationIdentification_Other_SchemeName(null, "IBAN"), UKM.UltimateCreditor_Identification_PrivateIdentification_Other_SchemeName(null, "IBAN")
-                | ClearBank.Common.BankAccount.BBAN x -> null, x, UKM.Creditor_SchemeName(null, "BBAN"), UKM.Creditor_Identification_OrganisationIdentification_Other_SchemeName(null, "BBAN"), UKM.Creditor_Identification_PrivateIdentification_Other_SchemeName(null, "BBAN"), UKM.UltimateCreditor_Identification_OrganisationIdentification_Other_SchemeName(null, "BBAN"), UKM.UltimateCreditor_Identification_PrivateIdentification_Other_SchemeName(null, "BBAN")
-                | ClearBank.Common.BankAccount.UK_Domestic(x, y) -> null, x.Replace("-", "").Replace(" ", "") + y, UKM.Creditor_SchemeName(null, "PRTY_COUNTRY_SPECIFIC"), UKM.Creditor_Identification_OrganisationIdentification_Other_SchemeName(null, "PRTY_COUNTRY_SPECIFIC"), UKM.Creditor_Identification_PrivateIdentification_Other_SchemeName(null, "PRTY_COUNTRY_SPECIFIC"), UKM.UltimateCreditor_Identification_OrganisationIdentification_Other_SchemeName(null, "PRTY_COUNTRY_SPECIFIC"), UKM.UltimateCreditor_Identification_PrivateIdentification_Other_SchemeName(null, "PRTY_COUNTRY_SPECIFIC")
+        let accountid, deptorPrivateScheme = 
+            match account with
+            | ClearBank.Common.BankAccount.IBAN x -> UKM.AccountIdentifier("Iban", x), UKM.PaymentRequestItem_DebtorPrivateIdentification_Other_SchemeName(null, "IBAN")
+            | ClearBank.Common.BankAccount.BBAN x -> UKM.AccountIdentifier("AccountId", x), UKM.PaymentRequestItem_DebtorPrivateIdentification_Other_SchemeName(null, "BBAN")
+            | ClearBank.Common.BankAccount.UK_Domestic(x, y) -> UKM.AccountIdentifier("AccountId", x.Replace("-", "").Replace(" ", "") + y), UKM.PaymentRequestItem_DebtorPrivateIdentification_Other_SchemeName(null, "PRTY_COUNTRY_SPECIFIC")
 
-            let accountid, deptorPrivateScheme = 
-                match account with
-                | ClearBank.Common.BankAccount.IBAN x -> UKM.AccountIdentifier("Iban", x), UKM.PaymentRequestItem_DebtorPrivateIdentification_Other_SchemeName(null, "IBAN")
-                | ClearBank.Common.BankAccount.BBAN x -> UKM.AccountIdentifier("AccountId", x), UKM.PaymentRequestItem_DebtorPrivateIdentification_Other_SchemeName(null, "BBAN")
-                | ClearBank.Common.BankAccount.UK_Domestic(x, y) -> UKM.AccountIdentifier("AccountId", x.Replace("-", "").Replace(" ", "") + y), UKM.PaymentRequestItem_DebtorPrivateIdentification_Other_SchemeName(null, "PRTY_COUNTRY_SPECIFIC")
-
-            let creditorId =
-                    //UKM.Creditor_Identification(
-                    //    UKM.Creditor_Identification_OrganisationIdentification(
-                    //        UKM.Creditor_Identification_OrganisationIdentification_Other(
-                    //            "identification", creditorInstitutionScheme, "issuer")
-                    //    ),
-                    //    UKM.Creditor_Identification_PrivateIdentification(
-                    //        UKM.Creditor_Identification_PrivateIdentification_DateAndPlaceOfBirth( (Some (DateTimeOffset(DateTime(1970,01,01)))), "Kuopio", creditorCountry),
-                    //        UKM.Creditor_Identification_PrivateIdentification_Other(
-                    //            "identification", creditorPrivateScheme
-                    //        )
-                    //    )
-                    //),
-                    null
-
-            let creditor = 
-                UKM.Creditor(
-                    "John",
-                    UKM.Creditor_Address(
-                        "Street 1", "Street 2", "77000", creditorCountry, "Line 3"
-                    ),
-                    "NDEAFIHH", // BIC
-                    creditorId,
-                    creditorCountry, // country of residence
-                    UKM.Creditor_ContactDetails("John", "john@mailinator.com"),
-                    creditorIban, creditorAccountnumber,
-                    creditorScheme
-                )
-
-            let ultimateCreditor =
-                //UKM.UltimateCreditor(
-                //        "John",
-                //        UKM.UltimateCreditor_Address(creditorCountry, "Street 1", "Street 2", "Street 3", "77000"),
-                //        "NDEAFIHH", // BIC
-                //        UKM.UltimateCreditor_Identification(
-                //            UKM.UltimateCreditor_Identification_OrganisationIdentification(
-                //                UKM.UltimateCreditor_Identification_OrganisationIdentification_Other(
-                //                    "identification", ultimateInstitutionScheme, "issuer"
-                //                )
-                //            ),
-                //            UKM.UltimateCreditor_Identification_PrivateIdentification(
-                //                UKM.UltimateCreditor_Identification_PrivateIdentification_DateAndPlaceOfBirth( (Some (DateTimeOffset(DateTime(1970,01,01)))), "Kuopio", creditorCountry),
-                //                UKM.UltimateCreditor_Identification_PrivateIdentification_Other(
-                //                    "identification", ultimatePrivateScheme
-                //                )
-
-                //            )
+        let creditorId =
+                //UKM.Creditor_Identification(
+                //    UKM.Creditor_Identification_OrganisationIdentification(
+                //        UKM.Creditor_Identification_OrganisationIdentification_Other(
+                //            "identification", creditorInstitutionScheme, "issuer")
+                //    ),
+                //    UKM.Creditor_Identification_PrivateIdentification(
+                //        UKM.Creditor_Identification_PrivateIdentification_DateAndPlaceOfBirth( (Some (DateTimeOffset(DateTime(1970,01,01)))), "Kuopio", creditorCountry),
+                //        UKM.Creditor_Identification_PrivateIdentification_Other(
+                //            "identification", creditorPrivateScheme
                 //        )
                 //    )
+                //),
                 null
 
-            let deptorPrivateId =
-                //UKM.PaymentRequestItem_DebtorPrivateIdentification(
-                //        UKM.PaymentRequestItem_DebtorPrivateIdentification_DateAndPlaceOfBirth( (Some (DateTimeOffset(DateTime(1970,01,01)))), "Kuopio", deptorCountry),
-                //        UKM.PaymentRequestItem_DebtorPrivateIdentification_Other(
-                //            "identification", deptorPrivateScheme
-                //            )
-                //    )
-                null
+        let creditor = 
+            UKM.Creditor(
+                "John",
+                UKM.Creditor_Address(
+                    "Street 1", "Street 2", "77000", creditorCountry, "Line 3"
+                ),
+                "NDEAFIHH", // BIC
+                creditorId,
+                creditorCountry, // country of residence
+                UKM.Creditor_ContactDetails("John", "john@mailinator.com"),
+                creditorIban, creditorAccountnumber,
+                creditorScheme
+            )
 
-            let creditorAgent =
-                UKM.CreditorAgent(
-                    UKM.CreditorAgent_FinancialInstitutionIdentification(
-                        "Some bank name",
-                        UKM.CreditorAgent_FinancialInstitutionIdentification_AddressDetails(
-                            deptorCountry, "Street 1", "Street 2", "Street 3", "77000"
-                        ),
-                        "NDEAFIHH", // BIC
-                        null, // ABA
-                        null, // clearing system id code "12345"
-                        null // memberId
-                    ),
-                    "Branch id"
-                )
+        let ultimateCreditor =
+            //UKM.UltimateCreditor(
+            //        "John",
+            //        UKM.UltimateCreditor_Address(creditorCountry, "Street 1", "Street 2", "Street 3", "77000"),
+            //        "NDEAFIHH", // BIC
+            //        UKM.UltimateCreditor_Identification(
+            //            UKM.UltimateCreditor_Identification_OrganisationIdentification(
+            //                UKM.UltimateCreditor_Identification_OrganisationIdentification_Other(
+            //                    "identification", ultimateInstitutionScheme, "issuer"
+            //                )
+            //            ),
+            //            UKM.UltimateCreditor_Identification_PrivateIdentification(
+            //                UKM.UltimateCreditor_Identification_PrivateIdentification_DateAndPlaceOfBirth( (Some (DateTimeOffset(DateTime(1970,01,01)))), "Kuopio", creditorCountry),
+            //                UKM.UltimateCreditor_Identification_PrivateIdentification_Other(
+            //                    "identification", ultimatePrivateScheme
+            //                )
 
-            let intermediaryAgent =
-                //UKM.IntermediaryAgent(
-                //    UKM.IntermediaryAgent_FinancialInstitutionIdentification(
-                //        UKM.IntermediaryAgent_FinancialInstitutionIdentification_AddressDetails(deptorCountry, "Street 1", "Street 2", "Street 3", "77000"),
-                //        "NDEAFIHH", // BIC
-                //        null, // ABA
-                //        "name")
-                //    )
-                null
+            //            )
+            //        )
+            //    )
+            null
 
-            let instructions =
-                UKM.PaymentRequestItem(
-                    ("123456789" + rnd.Next(10000).ToString()), // endToEndId
-                    ("123456789" + rnd.Next(1000).ToString()), // paymentReference
-                    Convert.ToSingle(123.00m), //sum
-                    creditor,
-                    "Jim Doe", //deptor name
-                    UKM.PaymentRequestItem_DebtorAddress(
-                        "Street 1", "Street 2", "77000", deptorCountry, "Line 3"
-                    ),
-                    accountid,
-                    currency,
-                    "NDEAFIHH", //Deptor BIC
-                    deptorPrivateId,
-                    intermediaryAgent,
-                    creditorAgent,
-                    "instructionsForAgent",
-                    UKM.Purpose("code", "proprietary"),
-                    UKM.RemittanceInformation("Additional info"),
-                    ultimateCreditor)
+        let deptorPrivateId =
+            //UKM.PaymentRequestItem_DebtorPrivateIdentification(
+            //        UKM.PaymentRequestItem_DebtorPrivateIdentification_DateAndPlaceOfBirth( (Some (DateTimeOffset(DateTime(1970,01,01)))), "Kuopio", deptorCountry),
+            //        UKM.PaymentRequestItem_DebtorPrivateIdentification_Other(
+            //            "identification", deptorPrivateScheme
+            //            )
+            //    )
+            null
 
-            
+        let creditorAgent =
+            UKM.CreditorAgent(
+                UKM.CreditorAgent_FinancialInstitutionIdentification(
+                    "Some bank name",
+                    "NDEAFIHH", // BIC
+                    null, // ABA
+                    null, // clearing system id code "12345"
+                    null, // memberId
+                    UKM.CreditorAgent_FinancialInstitutionIdentification_AddressDetails(
+                        deptorCountry, "Street 1", "Street 2", "Street 3", "77000"
+                    )
+                ),
+                "Branch id"
+            )
+
+        let intermediaryAgent =
+            //UKM.IntermediaryAgent(
+            //    UKM.IntermediaryAgent_FinancialInstitutionIdentification(
+            //        UKM.IntermediaryAgent_FinancialInstitutionIdentification_AddressDetails(deptorCountry, "Street 1", "Street 2", "Street 3", "77000"),
+            //        "NDEAFIHH", // BIC
+            //        null, // ABA
+            //        "name")
+            //    )
+            null
+
+        let instructions =
+            UKM.PaymentRequestItem(
+                ("123456789" + rnd.Next(10000).ToString()), // endToEndId
+                ("123456789" + rnd.Next(1000).ToString()), // paymentReference
+                Convert.ToSingle(123.00m), //sum
+                creditor,
+                "Jim Doe", //deptor name
+                UKM.PaymentRequestItem_DebtorAddress(
+                    "Street 1", "Street 2", "77000", deptorCountry, "Line 3"
+                ),
+                accountid,
+                currency,
+                "NDEAFIHH", //Deptor BIC
+                deptorPrivateId,
+                intermediaryAgent,
+                creditorAgent,
+                "instructionsForAgent",
+                UKM.Purpose("code", "proprietary"),
+                UKM.RemittanceInformation("Additional info"),
+                ultimateCreditor)
+
+
+        task {
+
             let! actual = ClearBank.UK.MultiCurrency.transferPayments clearbankDefaultConfig azureKeyVaultCertificateName xreq batchId currency [| instructions |]
             AssertTestResult actual
         } :> System.Threading.Tasks.Task
@@ -419,10 +416,10 @@ type ``UK MultiCurrency Tests`` () =
     member this.GuidFormatting_RequestIdFormat () =
         // Verify GUID formatting matches API requirements (no hyphens)
         let testGuid = Guid.Parse("12345678-1234-1234-1234-123456789abc")
-        let formatted = testGuid.ToString("N")
+        let formatted = testGuid.ToString "N"
         
         Assert.IsTrue(formatted.Length = 32)
-        Assert.IsFalse(formatted.Contains("-"))
+        Assert.IsFalse(formatted.Contains '-')
         let expected = "12345678123412341234123456789abc"
         Assert.IsTrue((formatted = expected))
 
@@ -472,9 +469,7 @@ type ``UK MultiCurrency Tests`` () =
         let successResult: Result<string, (Exception * string)> = Ok "Success"
         let errorResult: Result<string, (Exception * string)> = Error (Exception("Test"), "Details")
         
-        match successResult with
-        | Ok _ -> Assert.IsTrue(true)
-        | Error _ -> Assert.Fail("Should be Ok")
+        successResult |> Result.map (fun _ -> Assert.IsTrue(true)) |> Result.defaultWith (fun _ -> Assert.Fail("Should be Ok"))
         
         match errorResult with
         | Ok _ -> Assert.Fail("Should be Error")
@@ -634,10 +629,10 @@ type ``EU Tests`` () =
         Assert.AreNotEqual(id1, id3)
         
         // Verify that GUIDs convert to string format correctly (used in EU functions)
-        let id1String = id1.ToString("N")
+        let id1String = id1.ToString "N"
         // N format is 32 chars without hyphens
         Assert.IsTrue(id1String.Length = 32)
-        Assert.IsFalse(id1String.Contains("-"))
+        Assert.IsFalse(id1String.Contains '-')
 
     [<TestMethod>]
     member this.SepaAddress_ValidFormats () =

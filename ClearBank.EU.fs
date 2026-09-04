@@ -43,8 +43,7 @@ let sepaTransferPayments config azureKeyVaultCertificateName (requestId:Guid) se
             else None
         let! r = client.PaymentCreate(authToken, signature_bodyhash_string, requestIdS, sepaOutboundPaymentRequest) |> Async.Catch
         httpClient.Dispose()
-        if subscription.IsSome then
-            subscription.Value.Dispose()
+        match subscription with | Some v -> v.Dispose() | None -> ()
         match r with
         | Choice1Of2 x -> return Ok x
         | Choice2Of2 err ->
@@ -82,8 +81,7 @@ let sepaInstantTransferPayments config azureKeyVaultCertificateName (requestId:G
             else None
         let! r = client.PaymentCreate(authToken, signature_bodyhash_string, requestIdS, sepaOutboundPaymentRequest) |> Async.Catch
         httpClient.Dispose()
-        if subscription.IsSome then
-            subscription.Value.Dispose()
+        match subscription with | Some v -> v.Dispose() | None -> ()
         match r with
         | Choice1Of2 x -> return Ok x
         | Choice2Of2 err ->
@@ -121,8 +119,7 @@ let sepaRecallResponse config azureKeyVaultCertificateName (requestId:Guid) reca
             else None
         let! r = client.PaymentsInboundRecallRequestResult(authToken, signature_bodyhash_string, requestIdS, recallResponseRequest) |> Async.Catch
         httpClient.Dispose()
-        if subscription.IsSome then
-            subscription.Value.Dispose()
+        match subscription with | Some v -> v.Dispose() | None -> ()
         match r with
         | Choice1Of2 x -> return Ok x
         | Choice2Of2 err ->
@@ -157,8 +154,7 @@ let sepaRecallRequest config azureKeyVaultCertificateName (requestId:Guid) recal
             else None
         let! r = client.PaymentRecall(authToken, signature_bodyhash_string, requestIdS, recallRequest) |> Async.Catch
         httpClient.Dispose()
-        if subscription.IsSome then
-            subscription.Value.Dispose()
+        match subscription with | Some v -> v.Dispose() | None -> ()
         match r with
         | Choice1Of2 x -> return Ok x
         | Choice2Of2 err ->
@@ -193,8 +189,7 @@ let sepaPaymentReturn config azureKeyVaultCertificateName (requestId:Guid) payme
             else None
         let! r = client.PaymentsInboundReturnOfInboundPayment(authToken, signature_bodyhash_string, requestIdS, paymentReturnRequest) |> Async.Catch
         httpClient.Dispose()
-        if subscription.IsSome then
-            subscription.Value.Dispose()
+        match subscription with | Some v -> v.Dispose() | None -> ()
         match r with
         | Choice1Of2 x -> return Ok x
         | Choice2Of2 err ->
@@ -229,8 +224,7 @@ let sepaInstantRecallResponse config azureKeyVaultCertificateName (requestId:Gui
             else None
         let! r = client.SepaInstantRecallResponse(paymentId, authToken, signature_bodyhash_string, requestIdS, recallResponseRequest) |> Async.Catch
         httpClient.Dispose()
-        if subscription.IsSome then
-            subscription.Value.Dispose()
+        match subscription with | Some v -> v.Dispose() | None -> ()
         match r with
         | Choice1Of2 x -> return Ok x
         | Choice2Of2 err ->
@@ -265,8 +259,7 @@ let sepaInstantRecallRequest config azureKeyVaultCertificateName (requestId:Guid
             else None
         let! r = client.PaymentRequestForRecall(paymentId, authToken, signature_bodyhash_string, requestIdS, recallRequest) |> Async.Catch
         httpClient.Dispose()
-        if subscription.IsSome then
-            subscription.Value.Dispose()
+        match subscription with | Some v -> v.Dispose() | None -> ()
         match r with
         | Choice1Of2 x -> return Ok x
         | Choice2Of2 err ->
@@ -303,8 +296,7 @@ module Target2 =
                 else None
             let! r = client.PostPaymentsT2RtgsV1InstitutionPayments(authToken, signature_bodyhash_string, requestIdS, institutionPaymentRequest) |> Async.Catch
             httpClient.Dispose()
-            if subscription.IsSome then
-                subscription.Value.Dispose()
+            match subscription with | Some v -> v.Dispose() | None -> ()
             match r with
             | Choice1Of2 x -> return Ok x
             | Choice2Of2 err ->
@@ -339,8 +331,7 @@ module Target2 =
                 else None
             let! r = client.PostPaymentsT2RtgsV1CustomerPayments(authToken, signature_bodyhash_string, requestIdS, customerPaymentRequest) |> Async.Catch
             httpClient.Dispose()
-            if subscription.IsSome then
-                subscription.Value.Dispose()
+            match subscription with | Some v -> v.Dispose() | None -> ()
             match r with
             | Choice1Of2 x -> return Ok x
             | Choice2Of2 err ->
@@ -375,8 +366,7 @@ module Target2 =
                 else None
             let! r = client.PostPaymentsT2RtgsV1PaymentReturns(authToken, signature_bodyhash_string, requestIdS, paymentReturnRequest) |> Async.Catch
             httpClient.Dispose()
-            if subscription.IsSome then
-                subscription.Value.Dispose()
+            match subscription with | Some v -> v.Dispose() | None -> ()
             match r with
             | Choice1Of2 x -> return Ok x
             | Choice2Of2 err ->

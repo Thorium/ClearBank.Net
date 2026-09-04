@@ -4,9 +4,15 @@ module TestParameters
 
 open ClearBank.Common
 
+[<Literal>]
 let clearbankPrivateKey = "..."
+[<Literal>]
 let azureKeyVaultName = "myVault"
+[<Literal>]
 let azureKeyVaultCertificateName = "myCert"
+[<Literal>]
 let sortCode = "04-06-05"
 let transferFromAccount = UK_Domestic(sortCode, "00000001")
-let clearbankUri = "https://institution-api-sim.clearbank.co.uk/" // test, prod: "https://institution-api.clearbank.co.uk/"
+/// test, prod: "https://institution-api.clearbank.co.uk/"
+[<Literal>]
+let clearbankUri = "https://institution-api-sim.clearbank.co.uk/"

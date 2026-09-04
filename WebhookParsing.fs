@@ -526,47 +526,67 @@ let parsePaymentsCallEU (webhookInput:string) : ClearBankPaymentEU =
 module WebhookTypes =
     module UK =
         /// UK Payment sent successfully.
+        [<Literal>]
         let TransactionSettled = "TransactionSettled"
         /// UK Payment has incorrect data, validation failed.
+        [<Literal>]
         let PaymentMessageAssessmentFailed = "PaymentMessageAssessmentFailed"
         /// UK Payment has incorrect data, validation failed. Same as PaymentMessageAssessmentFailed but due to typing error, the webhook can return either. 
+        [<Literal>]
         let PaymentMessageAssesmentFailed = "PaymentMessageAssesmentFailed"
         /// UK Payment validation failed.
+        [<Literal>]
         let PaymentMessageValidationFailed = "PaymentMessageValidationFailed"
         /// UK Payment sent but returned as failed.
+        [<Literal>]
         let TransactionRejected = "TransactionRejected"
         /// UK
+        [<Literal>]
         let InboundHeldTransaction = "InboundHeldTransaction"
         /// UK
+        [<Literal>]
         let OutboundHeldTransaction = "OutboundHeldTransaction"
 
     module EU =
         /// EU
+        [<Literal>]
         let ``CustomerAccounts.TransactionCompleted`` = "CustomerAccounts.TransactionCompleted"
 
         /// EU SEPA
+        [<Literal>]
         let ``Sepa.Ct.InboundPayment.ReturnCompleted`` = "Sepa.Ct.InboundPayment.ReturnCompleted"
         /// EU SEPA
+        [<Literal>]
         let ``Sepa.Ct.InboundPayment.ReturnFailed`` = "Sepa.Ct.InboundPayment.ReturnFailed"
         /// EU SEPA
+        [<Literal>]
         let ``Sepa.Ct.OutboundPayment.ReturnCompleted`` = "Sepa.Ct.OutboundPayment.ReturnCompleted"
         /// EU SEPA
+        [<Literal>]
         let ``Sepa.Ct.OutboundPayment.ReturnFailed`` = "Sepa.Ct.OutboundPayment.ReturnFailed"
 
         /// EU SEPA Instant
+        [<Literal>]
         let ``Sepa.Instant.Inbound.Payment.Settled`` = "Sepa.Instant.Inbound.Payment.Settled"
         /// EU SEPA Instant
+        [<Literal>]
         let ``Sepa.Instant.RecallRequest.Received`` = "Sepa.Instant.RecallRequest.Received"
         /// EU SEPA Instant
+        [<Literal>]
         let ``Sepa.Instant.RecallPayment.Created`` = "Sepa.Instant.RecallPayment.Created"
         /// EU SEPA Instant
+        [<Literal>]
         let ``Sepa.Instant.RecallPayment.Settled`` = "Sepa.Instant.RecallPayment.Settled"
         /// EU SEPA Instant
+        [<Literal>]
         let ``Sepa.Instant.RecallPayment.Cancelled`` = "Sepa.Instant.RecallPayment.Cancelled"
 
         /// EU T2
+        [<Literal>]
         let ``Target2.FICreditTransfer.Inbound.Completed`` = "Target2.FICreditTransfer.Inbound.Completed"
         /// EU T2
+        [<Literal>]
         let ``Target2.FICreditTransfer.Outbound.Completed`` = "Target2.FICreditTransfer.Outbound.Completed"
         /// EU T2
+        [<Literal>]
         let ``Target2.FICreditTransfer.Outbound.Failed`` = "Target2.FICreditTransfer.Outbound.Failed"

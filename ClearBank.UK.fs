@@ -38,7 +38,7 @@ let callTestEndpoint config azureKeyVaultCertificateName =
         let payloaStr = client.Serialize payload
 
         let! signature_bodyhash_string = calculateSignature config azureKeyVaultCertificateName payloaStr |> Async.AwaitTask
-        let requestId = Guid.NewGuid().ToString("N")
+        let requestId = Guid.NewGuid().ToString "N"
 
         let subscription =
             if config.LogUnsuccessfulHandler.IsSome then
@@ -46,8 +46,7 @@ let callTestEndpoint config azureKeyVaultCertificateName =
             else None
         let! r = client.V1TestPost(authToken, signature_bodyhash_string, requestId, payload) |> Async.Catch
         httpClient.Dispose()
-        if subscription.IsSome then
-            subscription.Value.Dispose()
+        match subscription with | Some v -> v.Dispose() | None -> ()
         match r with
         | Choice1Of2 x -> return Ok x
         | Choice2Of2 err ->
@@ -163,8 +162,7 @@ let createNewAccount config azureKeyVaultCertificateName (requestId:Guid) (sortC
             else None
         let! r = client.V3InstitutionsByInstitutionIdAccountsPost(authToken, signature_bodyhash_string, requestIdS, req) |> Async.Catch
         httpClient.Dispose()
-        if subscription.IsSome then
-            subscription.Value.Dispose()
+        match subscription with | Some v -> v.Dispose() | None -> ()
         match r with
         | Choice1Of2 x -> return Ok x
         | Choice2Of2 err ->
@@ -272,8 +270,7 @@ let transferPayments config azureKeyVaultCertificateName (requestId:Guid) paymen
             else None
         let! r = client.Post(authToken, signature_bodyhash_string, requestIdS, req) |> Async.Catch
         httpClient.Dispose()
-        if subscription.IsSome then
-            subscription.Value.Dispose()
+        match subscription with | Some v -> v.Dispose() | None -> ()
         match r with
         | Choice1Of2 x -> return Ok x
         | Choice2Of2 err ->
@@ -334,8 +331,7 @@ module MultiCurrency =
 
             let! r = client.PostMccyV1Accounts(authToken, signature_bodyhash_string, requestIdS, req) |> Async.Catch
             httpClient.Dispose()
-            if subscription.IsSome then
-                subscription.Value.Dispose()
+            match subscription with | Some v -> v.Dispose() | None -> ()
             match r with
             | Choice1Of2 x -> return Ok x
             | Choice2Of2 err ->
@@ -461,7 +457,7 @@ module MultiCurrency =
     /// Update account details
     let updateAccount config azureKeyVaultCertificateName (requestId:Guid) (accountId:Guid) updateRequest =
 
-        let requestIdS = requestId.ToString("N")
+        let requestIdS = requestId.ToString "N"
         let httpClient =
             if config.LogUnsuccessfulHandler.IsNone then
                 new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
@@ -482,8 +478,7 @@ module MultiCurrency =
                 else None
             let! r = client.PatchMccyV1Account(accountId, requestIdS, authToken, signature_bodyhash_string, updateRequest) |> Async.Catch
             httpClient.Dispose()
-            if subscription.IsSome then
-                subscription.Value.Dispose()
+            match subscription with | Some v -> v.Dispose() | None -> ()
             match r with
             | Choice1Of2 x -> return Ok x
             | Choice2Of2 err ->
@@ -494,7 +489,7 @@ module MultiCurrency =
     /// Update account status (enable/disable)
     let updateAccountStatus config azureKeyVaultCertificateName (requestId:Guid) (accountId:Guid) statusRequest =
 
-        let requestIdS = requestId.ToString("N")
+        let requestIdS = requestId.ToString "N"
         let httpClient =
             if config.LogUnsuccessfulHandler.IsNone then
                 new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
@@ -515,8 +510,7 @@ module MultiCurrency =
                 else None
             let! r = client.PatchMccyV1AccountStatus(accountId, requestIdS, authToken, signature_bodyhash_string, statusRequest) |> Async.Catch
             httpClient.Dispose()
-            if subscription.IsSome then
-                subscription.Value.Dispose()
+            match subscription with | Some v -> v.Dispose() | None -> ()
             match r with
             | Choice1Of2 x -> return Ok x
             | Choice2Of2 err ->
@@ -527,7 +521,7 @@ module MultiCurrency =
     /// Add currency to an existing account
     let addCurrency config azureKeyVaultCertificateName (requestId:Guid) (accountId:Guid) addCurrencyRequest =
 
-        let requestIdS = requestId.ToString("N")
+        let requestIdS = requestId.ToString "N"
         let httpClient =
             if config.LogUnsuccessfulHandler.IsNone then
                 new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
@@ -548,8 +542,7 @@ module MultiCurrency =
                 else None
             let! r = client.PostMccyV1AccountCurrencies(accountId, requestIdS, authToken, signature_bodyhash_string, addCurrencyRequest) |> Async.Catch
             httpClient.Dispose()
-            if subscription.IsSome then
-                subscription.Value.Dispose()
+            match subscription with | Some v -> v.Dispose() | None -> ()
             match r with
             | Choice1Of2 x -> return Ok x
             | Choice2Of2 err ->
@@ -583,8 +576,7 @@ module MultiCurrency =
                 | Some reason -> client.DeleteMccyV1Account(accountId, requestIdS, reason) |> Async.Catch
                 | None -> client.DeleteMccyV1Account(accountId, requestIdS) |> Async.Catch
             httpClient.Dispose()
-            if subscription.IsSome then
-                subscription.Value.Dispose()
+            match subscription with | Some v -> v.Dispose() | None -> ()
             match r with
             | Choice1Of2 x -> return Ok x
             | Choice2Of2 err ->
@@ -633,8 +625,7 @@ module MultiCurrency =
                 else None
             let! r = client.PostV1MccyPayments(authToken, signature_bodyhash_string, requestIdS, req) |> Async.Catch
             httpClient.Dispose()
-            if subscription.IsSome then
-                subscription.Value.Dispose()
+            match subscription with | Some v -> v.Dispose() | None -> ()
             match r with
             | Choice1Of2 x -> return Ok x
             | Choice2Of2 err ->
