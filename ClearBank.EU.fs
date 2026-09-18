@@ -3,6 +3,7 @@ module ClearBank.EU
 open System
 open System.Net.Http
 open System.Net
+open System.Text.Json
 open SwaggerProvider
 open ClearBank.Common
 
@@ -22,13 +23,13 @@ let sepaTransferPayments config azureKeyVaultCertificateName (requestId:Guid) se
     let requestIdS = requestId.ToString "N" //todo, unique, save to db
     let httpClient =
         if config.LogUnsuccessfulHandler.IsNone then
-            new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+            new HttpClient(BaseAddress= Uri config.BaseUrl)
         else
             let handler1 = new HttpClientHandler (UseCookies = false)
             let handler2 = new ErrorHandler(handler1)
-            new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+            new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
 
-    let opts = System.Text.Json.JsonSerializerOptions()
+    let opts = JsonSerializerOptions()
     opts.Converters.Add(ClearBank.Common.TwoDecimalsConverter())
     let client = SepaV1.Client(httpClient, opts)
 
@@ -60,13 +61,13 @@ let sepaInstantTransferPayments config azureKeyVaultCertificateName (requestId:G
     let requestIdS = requestId.ToString "N" //todo, unique, save to db
     let httpClient =
         if config.LogUnsuccessfulHandler.IsNone then
-            new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+            new HttpClient(BaseAddress= Uri config.BaseUrl)
         else
             let handler1 = new HttpClientHandler (UseCookies = false)
             let handler2 = new ErrorHandler(handler1)
-            new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+            new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
 
-    let opts = System.Text.Json.JsonSerializerOptions()
+    let opts = JsonSerializerOptions()
     opts.Converters.Add(ClearBank.Common.TwoDecimalsConverter())
     let client = SepaInstantV1.Client(httpClient, opts)
 
@@ -98,13 +99,13 @@ let sepaRecallResponse config azureKeyVaultCertificateName (requestId:Guid) reca
     let requestIdS = requestId.ToString "N" //todo, unique, save to db
     let httpClient =
         if config.LogUnsuccessfulHandler.IsNone then
-            new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+            new HttpClient(BaseAddress= Uri config.BaseUrl)
         else
             let handler1 = new HttpClientHandler (UseCookies = false)
             let handler2 = new ErrorHandler(handler1)
-            new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+            new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
 
-    let opts = System.Text.Json.JsonSerializerOptions()
+    let opts = JsonSerializerOptions()
     opts.Converters.Add(ClearBank.Common.TwoDecimalsConverter())
     let client = SepaV1.Client(httpClient, opts)
 
@@ -133,13 +134,13 @@ let sepaRecallRequest config azureKeyVaultCertificateName (requestId:Guid) recal
     let requestIdS = requestId.ToString "N" //todo, unique, save to db
     let httpClient =
         if config.LogUnsuccessfulHandler.IsNone then
-            new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+            new HttpClient(BaseAddress= Uri config.BaseUrl)
         else
             let handler1 = new HttpClientHandler (UseCookies = false)
             let handler2 = new ErrorHandler(handler1)
-            new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+            new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
 
-    let opts = System.Text.Json.JsonSerializerOptions()
+    let opts = JsonSerializerOptions()
     opts.Converters.Add(ClearBank.Common.TwoDecimalsConverter())
     let client = SepaV1.Client(httpClient, opts)
 
@@ -168,13 +169,13 @@ let sepaPaymentReturn config azureKeyVaultCertificateName (requestId:Guid) payme
     let requestIdS = requestId.ToString "N" //todo, unique, save to db
     let httpClient =
         if config.LogUnsuccessfulHandler.IsNone then
-            new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+            new HttpClient(BaseAddress= Uri config.BaseUrl)
         else
             let handler1 = new HttpClientHandler (UseCookies = false)
             let handler2 = new ErrorHandler(handler1)
-            new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+            new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
 
-    let opts = System.Text.Json.JsonSerializerOptions()
+    let opts = JsonSerializerOptions()
     opts.Converters.Add(ClearBank.Common.TwoDecimalsConverter())
     let client = SepaV1.Client(httpClient, opts)
 
@@ -203,13 +204,13 @@ let sepaInstantRecallResponse config azureKeyVaultCertificateName (requestId:Gui
     let requestIdS = requestId.ToString "N" //todo, unique, save to db
     let httpClient =
         if config.LogUnsuccessfulHandler.IsNone then
-            new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+            new HttpClient(BaseAddress= Uri config.BaseUrl)
         else
             let handler1 = new HttpClientHandler (UseCookies = false)
             let handler2 = new ErrorHandler(handler1)
-            new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+            new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
 
-    let opts = System.Text.Json.JsonSerializerOptions()
+    let opts = JsonSerializerOptions()
     opts.Converters.Add(ClearBank.Common.TwoDecimalsConverter())
     let client = SepaInstantV1.Client(httpClient, opts)
 
@@ -238,13 +239,13 @@ let sepaInstantRecallRequest config azureKeyVaultCertificateName (requestId:Guid
     let requestIdS = requestId.ToString "N" //todo, unique, save to db
     let httpClient =
         if config.LogUnsuccessfulHandler.IsNone then
-            new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+            new HttpClient(BaseAddress= Uri config.BaseUrl)
         else
             let handler1 = new HttpClientHandler (UseCookies = false)
             let handler2 = new ErrorHandler(handler1)
-            new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+            new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
 
-    let opts = System.Text.Json.JsonSerializerOptions()
+    let opts = JsonSerializerOptions()
     opts.Converters.Add(ClearBank.Common.TwoDecimalsConverter())
     let client = SepaInstantV1.Client(httpClient, opts)
 
@@ -275,13 +276,13 @@ module Target2 =
         let requestIdS = requestId.ToString "N" //todo, unique, save to db
         let httpClient =
             if config.LogUnsuccessfulHandler.IsNone then
-                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+                new HttpClient(BaseAddress= Uri config.BaseUrl)
             else
                 let handler1 = new HttpClientHandler (UseCookies = false)
                 let handler2 = new ErrorHandler(handler1)
-                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+                new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
 
-        let opts = System.Text.Json.JsonSerializerOptions()
+        let opts = JsonSerializerOptions()
         opts.Converters.Add(ClearBank.Common.TwoDecimalsConverter())
         let client = T2V1.Client(httpClient, opts)
 
@@ -310,13 +311,13 @@ module Target2 =
         let requestIdS = requestId.ToString "N" //todo, unique, save to db
         let httpClient =
             if config.LogUnsuccessfulHandler.IsNone then
-                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+                new HttpClient(BaseAddress= Uri config.BaseUrl)
             else
                 let handler1 = new HttpClientHandler (UseCookies = false)
                 let handler2 = new ErrorHandler(handler1)
-                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+                new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
 
-        let opts = System.Text.Json.JsonSerializerOptions()
+        let opts = JsonSerializerOptions()
         opts.Converters.Add(ClearBank.Common.TwoDecimalsConverter())
         let client = T2V1.Client(httpClient, opts)
 
@@ -345,13 +346,13 @@ module Target2 =
         let requestIdS = requestId.ToString "N" //todo, unique, save to db
         let httpClient =
             if config.LogUnsuccessfulHandler.IsNone then
-                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+                new HttpClient(BaseAddress= Uri config.BaseUrl)
             else
                 let handler1 = new HttpClientHandler (UseCookies = false)
                 let handler2 = new ErrorHandler(handler1)
-                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+                new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
 
-        let opts = System.Text.Json.JsonSerializerOptions()
+        let opts = JsonSerializerOptions()
         opts.Converters.Add(ClearBank.Common.TwoDecimalsConverter())
         let client = T2V1.Client(httpClient, opts)
 

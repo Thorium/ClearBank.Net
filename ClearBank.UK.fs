@@ -25,11 +25,11 @@ let callTestEndpoint config azureKeyVaultCertificateName =
 
     let httpClient =
         if config.LogUnsuccessfulHandler.IsNone then
-            new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+            new HttpClient(BaseAddress= Uri config.BaseUrl)
         else
             let handler1 = new HttpClientHandler (UseCookies = false)
             let handler2 = new ErrorHandler(handler1)
-            new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+            new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
     let client = ClearBankSwaggerV1.Client httpClient
     async {
 
@@ -143,11 +143,11 @@ let createNewAccount config azureKeyVaultCertificateName (requestId:Guid) (sortC
 
     let httpClient =
         if config.LogUnsuccessfulHandler.IsNone then
-            new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+            new HttpClient(BaseAddress= Uri config.BaseUrl)
         else
             let handler1 = new HttpClientHandler (UseCookies = false)
             let handler2 = new ErrorHandler(handler1)
-            new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+            new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
     let client = ClearBankOpenApiV3Accounts.Client httpClient
 
     async {
@@ -175,11 +175,11 @@ let getAccounts config =
 
     let httpClient =
         if config.LogUnsuccessfulHandler.IsNone then
-            new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+            new HttpClient(BaseAddress= Uri config.BaseUrl)
         else
             let handler1 = new HttpClientHandler (UseCookies = false)
             let handler2 = new ErrorHandler(handler1)
-            new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+            new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
     let client = ClearBankOpenApiV3Accounts.Client httpClient
 
     async {
@@ -198,11 +198,11 @@ let getTransactions config pageSize pageNumber startDate endDate =
 
     let httpClient =
         if config.LogUnsuccessfulHandler.IsNone then
-            new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+            new HttpClient(BaseAddress= Uri config.BaseUrl)
         else
             let handler1 = new HttpClientHandler (UseCookies = false)
             let handler2 = new ErrorHandler(handler1)
-            new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+            new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
     let client = ClearBankSwaggerV2.Client httpClient
 
     async {
@@ -222,11 +222,11 @@ let getAccountTransaction config (accountId:string) (transactionId:string) =
 
     let httpClient =
         if config.LogUnsuccessfulHandler.IsNone then
-            new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+            new HttpClient(BaseAddress= Uri config.BaseUrl)
         else
             let handler1 = new HttpClientHandler (UseCookies = false)
             let handler2 = new ErrorHandler(handler1)
-            new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+            new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
     let clientV2 = ClearBankSwaggerV2.Client httpClient
 
     async {
@@ -248,11 +248,11 @@ let transferPayments config azureKeyVaultCertificateName (requestId:Guid) paymen
     let requestIdS = requestId.ToString "N" //todo, unique, save to db
     let httpClient =
         if config.LogUnsuccessfulHandler.IsNone then
-            new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+            new HttpClient(BaseAddress= Uri config.BaseUrl)
         else
             let handler1 = new HttpClientHandler (UseCookies = false)
             let handler2 = new ErrorHandler(handler1)
-            new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+            new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
 
     let opts = System.Text.Json.JsonSerializerOptions()
     opts.Converters.Add(ClearBank.Common.TwoDecimalsConverter())
@@ -311,11 +311,11 @@ module MultiCurrency =
 
         let httpClient =
             if config.LogUnsuccessfulHandler.IsNone then
-                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+                new HttpClient(BaseAddress= Uri config.BaseUrl)
             else
                 let handler1 = new HttpClientHandler (UseCookies = false)
                 let handler2 = new ErrorHandler(handler1)
-                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+                new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
         let client = MccyTransactionsV1.Client httpClient
 
         async {
@@ -344,11 +344,11 @@ module MultiCurrency =
 
         let httpClient =
             if config.LogUnsuccessfulHandler.IsNone then
-                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+                new HttpClient(BaseAddress= Uri config.BaseUrl)
             else
                 let handler1 = new HttpClientHandler (UseCookies = false)
                 let handler2 = new ErrorHandler(handler1)
-                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+                new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
         let client = MccyTransactionsV1.Client httpClient
 
         async {
@@ -367,11 +367,11 @@ module MultiCurrency =
 
         let httpClient =
             if config.LogUnsuccessfulHandler.IsNone then
-                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+                new HttpClient(BaseAddress= Uri config.BaseUrl)
             else
                 let handler1 = new HttpClientHandler (UseCookies = false)
                 let handler2 = new ErrorHandler(handler1)
-                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+                new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
         let client = MccyTransactionsV1.Client httpClient
 
         async {
@@ -390,11 +390,11 @@ module MultiCurrency =
 
         let httpClient =
             if config.LogUnsuccessfulHandler.IsNone then
-                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+                new HttpClient(BaseAddress= Uri config.BaseUrl)
             else
                 let handler1 = new HttpClientHandler (UseCookies = false)
                 let handler2 = new ErrorHandler(handler1)
-                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+                new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
         let client = MccyTransactionsV1.Client httpClient
 
         async {
@@ -413,11 +413,11 @@ module MultiCurrency =
 
         let httpClient =
             if config.LogUnsuccessfulHandler.IsNone then
-                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+                new HttpClient(BaseAddress= Uri config.BaseUrl)
             else
                 let handler1 = new HttpClientHandler (UseCookies = false)
                 let handler2 = new ErrorHandler(handler1)
-                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+                new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
         let client = MccyTransactionsV1.Client httpClient
 
         async {
@@ -436,11 +436,11 @@ module MultiCurrency =
 
         let httpClient =
             if config.LogUnsuccessfulHandler.IsNone then
-                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+                new HttpClient(BaseAddress= Uri config.BaseUrl)
             else
                 let handler1 = new HttpClientHandler (UseCookies = false)
                 let handler2 = new ErrorHandler(handler1)
-                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+                new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
         let client = MccyTransactionsV1.Client httpClient
 
         async {
@@ -460,11 +460,11 @@ module MultiCurrency =
         let requestIdS = requestId.ToString "N"
         let httpClient =
             if config.LogUnsuccessfulHandler.IsNone then
-                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+                new HttpClient(BaseAddress= Uri config.BaseUrl)
             else
                 let handler1 = new HttpClientHandler (UseCookies = false)
                 let handler2 = new ErrorHandler(handler1)
-                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+                new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
         let client = MccyTransactionsV1.Client httpClient
 
         async {
@@ -492,11 +492,11 @@ module MultiCurrency =
         let requestIdS = requestId.ToString "N"
         let httpClient =
             if config.LogUnsuccessfulHandler.IsNone then
-                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+                new HttpClient(BaseAddress= Uri config.BaseUrl)
             else
                 let handler1 = new HttpClientHandler (UseCookies = false)
                 let handler2 = new ErrorHandler(handler1)
-                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+                new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
         let client = MccyTransactionsV1.Client httpClient
 
         async {
@@ -524,11 +524,11 @@ module MultiCurrency =
         let requestIdS = requestId.ToString "N"
         let httpClient =
             if config.LogUnsuccessfulHandler.IsNone then
-                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+                new HttpClient(BaseAddress= Uri config.BaseUrl)
             else
                 let handler1 = new HttpClientHandler (UseCookies = false)
                 let handler2 = new ErrorHandler(handler1)
-                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+                new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
         let client = MccyTransactionsV1.Client httpClient
 
         async {
@@ -557,11 +557,11 @@ module MultiCurrency =
         let requestIdS = requestId.ToString "N"
         let httpClient =
             if config.LogUnsuccessfulHandler.IsNone then
-                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+                new HttpClient(BaseAddress= Uri config.BaseUrl)
             else
                 let handler1 = new HttpClientHandler (UseCookies = false)
                 let handler2 = new ErrorHandler(handler1)
-                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+                new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
         let client = MccyTransactionsV1.Client httpClient
 
         async {
@@ -603,11 +603,11 @@ module MultiCurrency =
         let requestIdS = requestId.ToString "N"
         let httpClient =
             if config.LogUnsuccessfulHandler.IsNone then
-                new System.Net.Http.HttpClient(BaseAddress= Uri config.BaseUrl)
+                new HttpClient(BaseAddress= Uri config.BaseUrl)
             else
                 let handler1 = new HttpClientHandler (UseCookies = false)
                 let handler2 = new ErrorHandler(handler1)
-                new System.Net.Http.HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
+                new HttpClient(handler2, BaseAddress= Uri config.BaseUrl)
 
         let opts = System.Text.Json.JsonSerializerOptions()
         opts.Converters.Add(TwoDecimalsConverter())
