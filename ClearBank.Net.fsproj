@@ -5,7 +5,31 @@
     <TargetFrameworks>netstandard2.0;netstandard2.1;net8.0;net10.0</TargetFrameworks>
     <PackageId>ClearBank.Net</PackageId>
     <AssemblyName>ClearBank.Net</AssemblyName>
-    <Version>1.0.37</Version>
+    <Version>1.1.0</Version>
+    <PackageReleaseNotes>v1.1.0:
+- BREAKING: SwaggerProvider 4.2.1: generated models take and return option for optional strings, Guid for ids, DateTimeOffset for date-times; multi-currency AccountIdentifier kind is an enum
+- CHANGED: FSharp.Core 10.1.401, FSharp.Data 8.2.0, KeyVaultSigning 1.0.13 (async signing-client cache fix)
+- CHANGED: legacy DateTime filters of unspecified kind are sent as UTC
+- FIXED: bundled v1/v2 schemas: response keys with spaces, a non-map examples and query uniqueItems that the OpenAPI reader rejects
+- ADDED: CHAPS v6 customer, institution and return payments (chapsCustomerPaymentAsync, chapsInstitutionPaymentAsync, chapsReturnPaymentAsync, chapsAccount)
+- ADDED: interest-bearing account closure: requestAccountClosureAsync, getAccountClosureAsync
+- ADDED: bundled sterling-v1, cop-outbound-v1, cop-accounts-v1 and chaps-v6 schemas; chaps-v6 amount as double
+- FIXED: payment amounts were formatted with the current culture: under a decimal-comma culture (fi-FI, de-DE) every FPS, SEPA, T2, multi-currency and CHAPS payment failed
+- FIXED: a request that cannot be serialized is an Error, not an exception
+- FIXED: multi-currency payment amounts were float32 (1234567.89 was sent as 1234567.9); PaymentRequestItem amount is now float, sent with two decimals
+- ADDED: RequestSigner: Azure Key Vault, local RSA key, or a SHA-256 digest delegate (AWS KMS) for DigitalSignature
+- ADDED: ClearBankClient over a caller-owned, shared HttpClient; Task-based UK.Api, UK.MultiCurrency.Api and EU.Api with CancellationToken
+- ADDED: UK accounts: get by id, update (status, reason, owner, minimum balance), close
+- ADDED: UK virtual accounts: create, list, list all, get, update, disable
+- ADDED: Bacs Direct Debit mandates: list, cancel, return, collections, unpaid collections; transaction returns; unpaid Direct Debits and unapplied Direct Credits
+- ADDED: per-account and per-virtual-account transactions
+- ADDED: Confirmation of Payee name verification, Secondary Reference Data check, inbound CoP opt-out
+- ADDED: multi-currency payment cancellation
+- ADDED: typed UkWebhook / EuWebhook with webhookTypeUK / webhookTypeEU; createSignedResponseAsync with any signer
+- ADDED: ClearBankResponseException carries the status and body of non-success responses
+- FIXED: multi-currency updateAccount, updateAccountStatus and addCurrency sent Authorization, DigitalSignature and X-Request-Id in the wrong headers
+- FIXED: multi-currency deleteAccount sent no Authorization header
+- CHANGED: the configuration-based functions delegate to the Task API and create their HttpClient when run, not when called</PackageReleaseNotes>
     <TargetFSharpCoreVersion>8.0.0.0</TargetFSharpCoreVersion>
     <Authors>Tuomas, Simon</Authors>
     <Company>Fund Ourselves</Company>
@@ -34,14 +58,14 @@
     <Compile Include="WebhookParsing.fs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="FSharp.Data" Version="8.1.11" />
-    <PackageReference Include="FSharp.Data.JsonProvider.Serializer" Version="1.0.7" />
-    <PackageReference Include="KeyVaultSigning" Version="1.0.12" />
+    <PackageReference Include="FSharp.Data" Version="8.2.0" />
+    <PackageReference Include="FSharp.Data.JsonProvider.Serializer" Version="1.0.8" />
+    <PackageReference Include="KeyVaultSigning" Version="1.0.13" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="SwaggerProvider" Version="3.2.0" />
+    <PackageReference Include="SwaggerProvider" Version="4.2.1" />
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.4" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="10.1.201" />
+    <PackageReference Update="FSharp.Core" Version="10.1.401" />
   </ItemGroup>
 </Project>

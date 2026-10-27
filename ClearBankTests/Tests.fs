@@ -127,9 +127,9 @@ type ``UK Tests`` () =
                 let transactions =
                     x.Transactions
                     |> Array.map (fun t ->
-                         t.TransactionTime.ToString() + " " + t.EndToEndIdentifier + ": " +
-                         t.CounterpartAccount.Identification.SortCode  + " " + t.CounterpartAccount.Identification.AccountNumber  + " " +
-                            t.Amount.InstructedAmount.ToString "F" + " " + t.Amount.Currency + ", " + t.TransactionReference)
+                         $"{t.TransactionTime} {t.EndToEndIdentifier}: " +
+                         $"{t.CounterpartAccount.Identification.SortCode} {t.CounterpartAccount.Identification.AccountNumber} " +
+                         $"""{t.Amount.InstructedAmount.ToString "F"} {t.Amount.Currency}, {t.TransactionReference}""")
                 let str = String.Join("\r\n", transactions)
                 Assert.AreNotEqual(0, transactions.Length)
                 Assert.AreNotEqual("",str)
@@ -183,7 +183,7 @@ type ``UK MultiCurrency Tests`` () =
                 let accounts =
                     x.Accounts
                     |> Array.map (fun a ->
-                        $"%s{a.Name} %A{a.Currencies} status %s{a.Status}: %s{a.StatusInformation}")
+                        $"%s{a.Name} %A{a.Currencies} status %s{a.Status}: %A{a.StatusInformation}")
 
                 Assert.AreNotEqual(0, accounts.Length)
                 Assert.AreNotEqual("",accounts.[0])
@@ -223,15 +223,15 @@ type ``UK MultiCurrency Tests`` () =
 
         let creditorIban, creditorAccountnumber, creditorScheme, creditorInstitutionScheme, creditorPrivateScheme, ultimateInstitutionScheme, ultimatePrivateScheme =
             match creditorAccount with
-            | Common.BankAccount.IBAN x -> x, null, UKM.Creditor_SchemeName(null, "IBAN"), UKM.Creditor_Identification_OrganisationIdentification_Other_SchemeName(null, "IBAN"), UKM.Creditor_Identification_PrivateIdentification_Other_SchemeName(null, "IBAN"), UKM.UltimateCreditor_Identification_OrganisationIdentification_Other_SchemeName(null, "IBAN"), UKM.UltimateCreditor_Identification_PrivateIdentification_Other_SchemeName(null, "IBAN")
-            | Common.BankAccount.BBAN x -> null, x, UKM.Creditor_SchemeName(null, "BBAN"), UKM.Creditor_Identification_OrganisationIdentification_Other_SchemeName(null, "BBAN"), UKM.Creditor_Identification_PrivateIdentification_Other_SchemeName(null, "BBAN"), UKM.UltimateCreditor_Identification_OrganisationIdentification_Other_SchemeName(null, "BBAN"), UKM.UltimateCreditor_Identification_PrivateIdentification_Other_SchemeName(null, "BBAN")
-            | Common.BankAccount.UK_Domestic(x, y) -> null, x.Replace("-", "").Replace(" ", "") + y, UKM.Creditor_SchemeName(null, "PRTY_COUNTRY_SPECIFIC"), UKM.Creditor_Identification_OrganisationIdentification_Other_SchemeName(null, "PRTY_COUNTRY_SPECIFIC"), UKM.Creditor_Identification_PrivateIdentification_Other_SchemeName(null, "PRTY_COUNTRY_SPECIFIC"), UKM.UltimateCreditor_Identification_OrganisationIdentification_Other_SchemeName(null, "PRTY_COUNTRY_SPECIFIC"), UKM.UltimateCreditor_Identification_PrivateIdentification_Other_SchemeName(null, "PRTY_COUNTRY_SPECIFIC")
+            | Common.BankAccount.IBAN x -> Some x, None, UKM.Creditor_SchemeName(None, Some "IBAN"), UKM.Creditor_Identification_OrganisationIdentification_Other_SchemeName(None, Some "IBAN"), UKM.Creditor_Identification_PrivateIdentification_Other_SchemeName(None, Some "IBAN"), UKM.UltimateCreditor_Identification_OrganisationIdentification_Other_SchemeName(None, Some "IBAN"), UKM.UltimateCreditor_Identification_PrivateIdentification_Other_SchemeName(None, Some "IBAN")
+            | Common.BankAccount.BBAN x -> None, Some x, UKM.Creditor_SchemeName(None, Some "BBAN"), UKM.Creditor_Identification_OrganisationIdentification_Other_SchemeName(None, Some "BBAN"), UKM.Creditor_Identification_PrivateIdentification_Other_SchemeName(None, Some "BBAN"), UKM.UltimateCreditor_Identification_OrganisationIdentification_Other_SchemeName(None, Some "BBAN"), UKM.UltimateCreditor_Identification_PrivateIdentification_Other_SchemeName(None, Some "BBAN")
+            | Common.BankAccount.UK_Domestic(x, y) -> None, Some(x.Replace("-", "").Replace(" ", "") + y), UKM.Creditor_SchemeName(None, Some "PRTY_COUNTRY_SPECIFIC"), UKM.Creditor_Identification_OrganisationIdentification_Other_SchemeName(None, Some "PRTY_COUNTRY_SPECIFIC"), UKM.Creditor_Identification_PrivateIdentification_Other_SchemeName(None, Some "PRTY_COUNTRY_SPECIFIC"), UKM.UltimateCreditor_Identification_OrganisationIdentification_Other_SchemeName(None, Some "PRTY_COUNTRY_SPECIFIC"), UKM.UltimateCreditor_Identification_PrivateIdentification_Other_SchemeName(None, Some "PRTY_COUNTRY_SPECIFIC")
 
         let accountid, deptorPrivateScheme = 
             match account with
-            | Common.BankAccount.IBAN x -> UKM.AccountIdentifier("Iban", x), UKM.PaymentRequestItem_DebtorPrivateIdentification_Other_SchemeName(null, "IBAN")
-            | Common.BankAccount.BBAN x -> UKM.AccountIdentifier("AccountId", x), UKM.PaymentRequestItem_DebtorPrivateIdentification_Other_SchemeName(null, "BBAN")
-            | Common.BankAccount.UK_Domestic(x, y) -> UKM.AccountIdentifier("AccountId", x.Replace("-", "").Replace(" ", "") + y), UKM.PaymentRequestItem_DebtorPrivateIdentification_Other_SchemeName(null, "PRTY_COUNTRY_SPECIFIC")
+            | Common.BankAccount.IBAN x -> UKM.AccountIdentifier(UKM.AccountIdentifierKind.Iban, x), UKM.PaymentRequestItem_DebtorPrivateIdentification_Other_SchemeName(None, Some "IBAN")
+            | Common.BankAccount.BBAN x -> UKM.AccountIdentifier(UKM.AccountIdentifierKind.AccountId, x), UKM.PaymentRequestItem_DebtorPrivateIdentification_Other_SchemeName(None, Some "BBAN")
+            | Common.BankAccount.UK_Domestic(x, y) -> UKM.AccountIdentifier(UKM.AccountIdentifierKind.AccountId, x.Replace("-", "").Replace(" ", "") + y), UKM.PaymentRequestItem_DebtorPrivateIdentification_Other_SchemeName(None, Some "PRTY_COUNTRY_SPECIFIC")
 
         let creditorId =
                 //UKM.Creditor_Identification(
@@ -252,12 +252,12 @@ type ``UK MultiCurrency Tests`` () =
             UKM.Creditor(
                 "John",
                 UKM.Creditor_Address(
-                    "Street 1", "Street 2", "77000", creditorCountry, "Line 3"
+                    "Street 1", "Street 2", "77000", creditorCountry, Some "Line 3"
                 ),
-                "NDEAFIHH", // BIC
+                Some "NDEAFIHH", // BIC
                 creditorId,
-                creditorCountry, // country of residence
-                UKM.Creditor_ContactDetails("John", "john@mailinator.com"),
+                Some creditorCountry, // country of residence
+                UKM.Creditor_ContactDetails(Some "John", Some "john@mailinator.com"),
                 creditorIban, creditorAccountnumber,
                 creditorScheme
             )
@@ -297,15 +297,15 @@ type ``UK MultiCurrency Tests`` () =
             UKM.CreditorAgent(
                 UKM.CreditorAgent_FinancialInstitutionIdentification(
                     "Some bank name",
-                    "NDEAFIHH", // BIC
-                    null, // ABA
-                    null, // clearing system id code "12345"
-                    null, // memberId
+                    Some "NDEAFIHH", // BIC
+                    None, // ABA
+                    None, // clearing system id code "12345"
+                    None, // memberId
                     UKM.CreditorAgent_FinancialInstitutionIdentification_AddressDetails(
-                        deptorCountry, "Street 1", "Street 2", "Street 3", "77000"
+                        deptorCountry, Some "Street 1", Some "Street 2", Some "Street 3", Some "77000"
                     )
                 ),
-                "Branch id"
+                Some "Branch id"
             )
 
         let intermediaryAgent =
@@ -322,21 +322,21 @@ type ``UK MultiCurrency Tests`` () =
             UKM.PaymentRequestItem(
                 ("123456789" + rnd.Next(10000).ToString()), // endToEndId
                 ("123456789" + rnd.Next(1000).ToString()), // paymentReference
-                Convert.ToSingle(123.00m), //sum
+                Convert.ToDouble(123.00m), //sum
                 creditor,
                 "Jim Doe", //deptor name
                 UKM.PaymentRequestItem_DebtorAddress(
-                    "Street 1", "Street 2", "77000", deptorCountry, "Line 3"
+                    "Street 1", "Street 2", "77000", deptorCountry, Some "Line 3"
                 ),
                 accountid,
                 currency,
-                "NDEAFIHH", //Deptor BIC
+                Some "NDEAFIHH", //Deptor BIC
                 deptorPrivateId,
                 intermediaryAgent,
                 creditorAgent,
-                "instructionsForAgent",
-                UKM.Purpose("code", "proprietary"),
-                UKM.RemittanceInformation("Additional info"),
+                Some "instructionsForAgent",
+                UKM.Purpose(Some "code", Some "proprietary"),
+                UKM.RemittanceInformation(Some "Additional info"),
                 ultimateCreditor)
 
 
@@ -496,13 +496,13 @@ type ``EU Tests`` () =
                     EU.SepaV1.Debtor(
                         "John Doe", //name
                         "GB15HBUK40127612345678", // IBAN
-                        EU.SepaV1.PostalAddress("Lahti", "FI", "Hameentie", "12", "15000", ""),
+                        EU.SepaV1.PostalAddress("FI", Some "Hameentie", Some "12", Some "Lahti", Some "15000", None),
                         null //ClearBank.EU.SepaV1.Identification(...)
                     ),
                     EU.SepaV1.Creditor(
                         "John Doe Jr", // Name
                         "GB15HBUK40127612345678", // IBAN
-                        EU.SepaV1.PostalAddress("Tampere", "FI", "Hameenkatu", "5", "33700", ""),
+                        EU.SepaV1.PostalAddress("FI", Some "Hameenkatu", Some "5", Some "Tampere", Some "33700", None),
                         null //ClearBank.EU.SepaV1.Identification(...)
 
                     ),
@@ -527,13 +527,13 @@ type ``EU Tests`` () =
                 EU.SepaV1.Debtor(
                     "Alice Smith", //name
                     "DE89370400440532013000", // IBAN
-                    EU.SepaV1.PostalAddress("Berlin", "DE", "Hauptstrasse", "10", "10115", ""),
+                    EU.SepaV1.PostalAddress("DE", Some "Hauptstrasse", Some "10", Some "Berlin", Some "10115", None),
                     null
                 ),
                 EU.SepaV1.Creditor(
                     "Bob Jones", // Name
                     "FR1420041010050500013M02606", // IBAN
-                    EU.SepaV1.PostalAddress("Paris", "FR", "Rue de la Paix", "25", "75002", ""),
+                    EU.SepaV1.PostalAddress("FR", Some "Rue de la Paix", Some "25", Some "Paris", Some "75002", None),
                     null
                 ),
                 EU.SepaV1.CreditorAgent(
@@ -560,9 +560,9 @@ type ``EU Tests`` () =
                 Convert.ToDouble(100.00m),
                 "EUR",
                 EU.SepaV1.Debtor("Debtor 1", "DE89370400440532013000", 
-                    EU.SepaV1.PostalAddress("City1", "DE", "Street1", "1", "10000", ""), null),
+                    EU.SepaV1.PostalAddress("DE", Some "Street1", Some "1", Some "City1", Some "10000", None), null),
                 EU.SepaV1.Creditor("Creditor 1", "FR1420041010050500013M02606",
-                    EU.SepaV1.PostalAddress("City2", "FR", "Street2", "2", "20000", ""), null),
+                    EU.SepaV1.PostalAddress("FR", Some "Street2", Some "2", Some "City2", Some "20000", None), null),
                 EU.SepaV1.CreditorAgent("SOGEFRPP"),
                 "Payment 1"
             )
@@ -573,9 +573,9 @@ type ``EU Tests`` () =
                 Convert.ToDouble(200.00m),
                 "EUR",
                 EU.SepaV1.Debtor("Debtor 2", "IT60X0542811101000000123456",
-                    EU.SepaV1.PostalAddress("City3", "IT", "Street3", "3", "30000", ""), null),
+                    EU.SepaV1.PostalAddress("IT", Some "Street3", Some "3", Some "City3", Some "30000", None), null),
                 EU.SepaV1.Creditor("Creditor 2", "ES9121000418450200051332",
-                    EU.SepaV1.PostalAddress("City4", "ES", "Street4", "4", "40000", ""), null),
+                    EU.SepaV1.PostalAddress("ES", Some "Street4", Some "4", Some "City4", Some "40000", None), null),
                 EU.SepaV1.CreditorAgent("BBVAESMM"),
                 "Payment 2"
             )
@@ -597,9 +597,9 @@ type ``EU Tests`` () =
                     Convert.ToDouble(amount),
                     "EUR",
                     EU.SepaV1.Debtor("Test Debtor", "DE89370400440532013000", 
-                        EU.SepaV1.PostalAddress("City", "DE", "Street", "1", "10000", ""), null),
+                        EU.SepaV1.PostalAddress("DE", Some "Street", Some "1", Some "City", Some "10000", None), null),
                     EU.SepaV1.Creditor("Test Creditor", "FR1420041010050500013M02606",
-                        EU.SepaV1.PostalAddress("City", "FR", "Street", "1", "20000", ""), null),
+                        EU.SepaV1.PostalAddress("FR", Some "Street", Some "1", Some "City", Some "20000", None), null),
                     EU.SepaV1.CreditorAgent("SOGEFRPP"),
                     "Test payment"
                 )
@@ -647,7 +647,7 @@ type ``EU Tests`` () =
         ]
         
         addresses |> List.iter (fun (city, country, street, number, postal, line2) ->
-            let address = EU.SepaV1.PostalAddress(city, country, street, number, postal, line2)
+            let address = EU.SepaV1.PostalAddress(country, Some street, Some number, Some city, Some postal, Some line2)
             Assert.IsNotNull(address)
         )
 
@@ -669,9 +669,9 @@ type ``EU Tests`` () =
                     Convert.ToDouble(100.00m),
                     "EUR",
                     EU.SepaV1.Debtor("Test Debtor", iban, 
-                        EU.SepaV1.PostalAddress("City", "DE", "Street", "1", "10000", ""), null),
+                        EU.SepaV1.PostalAddress("DE", Some "Street", Some "1", Some "City", Some "10000", None), null),
                     EU.SepaV1.Creditor("Test Creditor", "FR1420041010050500013M02606",
-                        EU.SepaV1.PostalAddress("City", "FR", "Street", "1", "20000", ""), null),
+                        EU.SepaV1.PostalAddress("FR", Some "Street", Some "1", Some "City", Some "20000", None), null),
                     EU.SepaV1.CreditorAgent("SOGEFRPP"),
                     "Test payment"
                 )

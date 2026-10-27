@@ -1,5 +1,6 @@
 module ClearBank.Webhooks
 open System
+open System.Net.Http
 open FSharp.Data.JsonProvider
 
 [<Sealed>]
@@ -12,23 +13,27 @@ let internal cbSerializerSettings = Newtonsoft.Json.JsonSerializerSettings(Missi
 let createResponsePlain (nonce:int64) =
     Newtonsoft.Json.JsonConvert.SerializeObject(WebHookResponse nonce, cbSerializerSettings)
 
-/// Creates a valid response that will not escape JSON object strings
-let createResponse config azureKeyVaultCertificateName (request:System.Net.Http.HttpRequestMessage) nonce =
+/// Creates a valid response, signed with the given signer, that will not escape JSON object strings
+let createSignedResponseAsync (signer: ClearBank.Common.RequestSigner) (request:HttpRequestMessage) nonce cancellationToken =
     task {
         let responseContent = nonce |> createResponsePlain
 
-        let! signature = ClearBank.Common.calculateSignature config azureKeyVaultCertificateName responseContent
+        let! signature = signer.Sign responseContent cancellationToken
 
         // The purpose of StringContent over CreateResponse() is to avoid string escaping.
         let response =
-            new System.Net.Http.HttpResponseMessage(
+            new HttpResponseMessage(
                 System.Net.HttpStatusCode.OK,
                 RequestMessage = request,
-                Content = new System.Net.Http.StringContent(responseContent, System.Text.Encoding.UTF8, "application/json"))
+                Content = new StringContent(responseContent, System.Text.Encoding.UTF8, "application/json"))
 
-        response.Headers.Add("DigitalSignature", signature)
+        response.Headers.Add("DigitalSignature", Convert.ToBase64String signature)
         return response
     }
+
+/// Creates a valid response that will not escape JSON object strings
+let createResponse config azureKeyVaultCertificateName (request:HttpRequestMessage) nonce =
+    createSignedResponseAsync (ClearBank.Common.RequestSigner.fromConfig config azureKeyVaultCertificateName) request nonce System.Threading.CancellationToken.None
 
 module UK =
     type internal ClearBankPaymentJson = FSharp.Data.JsonProvider<"""[
@@ -590,3 +595,152 @@ module WebhookTypes =
         /// EU T2
         [<Literal>]
         let ``Target2.FICreditTransfer.Outbound.Failed`` = "Target2.FICreditTransfer.Outbound.Failed"
+
+/// UK webhook types, from https://clearbank.github.io/uk/docs/lookup/webhook-lookup-table
+[<RequireQualifiedAccess>]
+type UkWebhook =
+    | TransactionSettled
+    | TransactionRejected
+    /// Also sent as PaymentMessageAssesmentFailed.
+    | PaymentMessageAssessmentFailed
+    | PaymentMessageValidationFailed
+    | InboundHeldTransaction
+    /// Also listed as OuboundHeldTransaction.
+    | OutboundHeldTransaction
+    | AccountCreated
+    | AccountClosureCompleted
+    | AccountClosureFailed
+    | VirtualAccountCreated
+    | VirtualAccountCreationFailed
+    | BacsMandateInitiated
+    | BacsMandateInitiationFailed
+    | BacsMandateCancelled
+    | BacsMandateCancellationFailed
+    | BacsMandateMigrated
+    | BacsMandateReturned
+    | BacsMandateReturnFailed
+    | BacsDirectDebitInboundPaymentCreated
+    | BacsDirectCreditInboundPaymentCreated
+    | BacsDirectCreditInboundPaymentHeld
+    | BacsDirectDebitReturnCreated
+    | BacsDirectCreditReturnCreated
+    | BacsDirectCreditRecalled
+    | BacsDirectDebitIndemnityClaimReceived
+    | BacsUnpaidDirectDebitReceived
+    | BacsUnappliedCreditReceived
+    | BacsDebitContraReceived
+    | StatementsReadyForDownload
+    | InterestPaid
+    | FITestEvent
+    /// A type this library doesn't list, e.g. multi-currency, cheque, ISA, FX or customer onboarding webhooks.
+    | Unlisted of string
+
+module UkWebhook =
+
+    let private names =
+        [ UkWebhook.TransactionSettled, "TransactionSettled"
+          UkWebhook.TransactionRejected, "TransactionRejected"
+          UkWebhook.PaymentMessageAssessmentFailed, "PaymentMessageAssessmentFailed"
+          UkWebhook.PaymentMessageValidationFailed, "PaymentMessageValidationFailed"
+          UkWebhook.InboundHeldTransaction, "InboundHeldTransaction"
+          UkWebhook.OutboundHeldTransaction, "OutboundHeldTransaction"
+          UkWebhook.AccountCreated, "AccountCreated"
+          UkWebhook.AccountClosureCompleted, "AccountClosureCompleted"
+          UkWebhook.AccountClosureFailed, "AccountClosureFailed"
+          UkWebhook.VirtualAccountCreated, "VirtualAccountCreated"
+          UkWebhook.VirtualAccountCreationFailed, "VirtualAccountCreationFailed"
+          UkWebhook.BacsMandateInitiated, "BacsMandateInitiatedV2"
+          UkWebhook.BacsMandateInitiationFailed, "BacsMandateInitiationFailed"
+          UkWebhook.BacsMandateCancelled, "BacsMandateCancelledV2"
+          UkWebhook.BacsMandateCancellationFailed, "BacsMandateCancellationFailed"
+          UkWebhook.BacsMandateMigrated, "BacsMandateMigratedV2"
+          UkWebhook.BacsMandateReturned, "BacsMandateReturned"
+          UkWebhook.BacsMandateReturnFailed, "BacsMandateReturnFailed"
+          UkWebhook.BacsDirectDebitInboundPaymentCreated, "BacsDirectDebitInboundPaymentCreatedV2"
+          UkWebhook.BacsDirectCreditInboundPaymentCreated, "BacsDirectCreditInboundPaymentCreatedV2"
+          UkWebhook.BacsDirectCreditInboundPaymentHeld, "BacsDirectCreditInboundPaymentHeldV3"
+          UkWebhook.BacsDirectDebitReturnCreated, "BacsDirectDebitReturnCreatedV4"
+          UkWebhook.BacsDirectCreditReturnCreated, "BacsDirectCreditReturnCreatedV4"
+          UkWebhook.BacsDirectCreditRecalled, "BacsDirectCreditRecalledV1"
+          UkWebhook.BacsDirectDebitIndemnityClaimReceived, "BacsDirectDebitIndemnityClaimReceivedEventV3"
+          UkWebhook.BacsUnpaidDirectDebitReceived, "BacsUnpaidDirectDebitReceivedV3"
+          UkWebhook.BacsUnappliedCreditReceived, "BacsUnappliedCreditReceivedV3"
+          UkWebhook.BacsDebitContraReceived, "BacsDebitContraReceived"
+          UkWebhook.StatementsReadyForDownload, "Statements.ReadyForDownload"
+          UkWebhook.InterestPaid, "InterestPaid"
+          UkWebhook.FITestEvent, "FITestEvent" ]
+
+    let private byName =
+        (names |> List.map (fun (case, name) -> name, case))
+        @ [ WebhookTypes.UK.PaymentMessageAssesmentFailed, UkWebhook.PaymentMessageAssessmentFailed
+            "OuboundHeldTransaction", UkWebhook.OutboundHeldTransaction ]
+        |> readOnlyDict
+
+    /// The webhook type of a payload's Type field.
+    let parse (name: string) =
+        match byName.TryGetValue name with
+        | true, case -> case
+        | false, _ -> UkWebhook.Unlisted name
+
+    /// The Type field value.
+    let name =
+        function
+        | UkWebhook.Unlisted name -> name
+        | case -> names |> List.find (fst >> (=) case) |> snd
+
+/// EU webhook types.
+[<RequireQualifiedAccess>]
+type EuWebhook =
+    | CustomerAccountsTransactionCompleted
+    | SepaCtInboundPaymentReturnCompleted
+    | SepaCtInboundPaymentReturnFailed
+    | SepaCtOutboundPaymentReturnCompleted
+    | SepaCtOutboundPaymentReturnFailed
+    | SepaInstantInboundPaymentSettled
+    | SepaInstantRecallRequestReceived
+    | SepaInstantRecallPaymentCreated
+    | SepaInstantRecallPaymentSettled
+    | SepaInstantRecallPaymentCancelled
+    | Target2InboundCompleted
+    | Target2OutboundCompleted
+    | Target2OutboundFailed
+    | FITestEvent
+    | Unlisted of string
+
+module EuWebhook =
+
+    let private names =
+        [ EuWebhook.CustomerAccountsTransactionCompleted, WebhookTypes.EU.``CustomerAccounts.TransactionCompleted``
+          EuWebhook.SepaCtInboundPaymentReturnCompleted, WebhookTypes.EU.``Sepa.Ct.InboundPayment.ReturnCompleted``
+          EuWebhook.SepaCtInboundPaymentReturnFailed, WebhookTypes.EU.``Sepa.Ct.InboundPayment.ReturnFailed``
+          EuWebhook.SepaCtOutboundPaymentReturnCompleted, WebhookTypes.EU.``Sepa.Ct.OutboundPayment.ReturnCompleted``
+          EuWebhook.SepaCtOutboundPaymentReturnFailed, WebhookTypes.EU.``Sepa.Ct.OutboundPayment.ReturnFailed``
+          EuWebhook.SepaInstantInboundPaymentSettled, WebhookTypes.EU.``Sepa.Instant.Inbound.Payment.Settled``
+          EuWebhook.SepaInstantRecallRequestReceived, WebhookTypes.EU.``Sepa.Instant.RecallRequest.Received``
+          EuWebhook.SepaInstantRecallPaymentCreated, WebhookTypes.EU.``Sepa.Instant.RecallPayment.Created``
+          EuWebhook.SepaInstantRecallPaymentSettled, WebhookTypes.EU.``Sepa.Instant.RecallPayment.Settled``
+          EuWebhook.SepaInstantRecallPaymentCancelled, WebhookTypes.EU.``Sepa.Instant.RecallPayment.Cancelled``
+          EuWebhook.Target2InboundCompleted, WebhookTypes.EU.``Target2.FICreditTransfer.Inbound.Completed``
+          EuWebhook.Target2OutboundCompleted, WebhookTypes.EU.``Target2.FICreditTransfer.Outbound.Completed``
+          EuWebhook.Target2OutboundFailed, WebhookTypes.EU.``Target2.FICreditTransfer.Outbound.Failed``
+          EuWebhook.FITestEvent, "FITestEvent" ]
+
+    let private byName = names |> List.map (fun (case, name) -> name, case) |> readOnlyDict
+
+    /// The webhook type of a payload's Type field.
+    let parse (name: string) =
+        match byName.TryGetValue name with
+        | true, case -> case
+        | false, _ -> EuWebhook.Unlisted name
+
+    /// The Type field value.
+    let name =
+        function
+        | EuWebhook.Unlisted name -> name
+        | case -> names |> List.find (fst >> (=) case) |> snd
+
+/// The typed webhook type of a parsed UK payload.
+let webhookTypeUK (payload: ClearBankPaymentUK) = UkWebhook.parse payload.Type
+
+/// The typed webhook type of a parsed EU payload.
+let webhookTypeEU (payload: ClearBankPaymentEU) = EuWebhook.parse payload.Type

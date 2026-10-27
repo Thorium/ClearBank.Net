@@ -1,0 +1,421 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "ClearBank.CoP.Outbound.Api 1.0",
+    "description": "ClearBank API for CoP outbound requests",
+    "version": "1.0.COP-Outbound"
+  },
+  "paths": {
+    "/open-banking/outbound/v1/name-verification": {
+      "post": {
+        "tags": [
+          "CoP"
+        ],
+        "summary": "This endpoint is used to confirm the exact name registered with the payee’s account.",
+                "parameters": [
+           {
+            "name": "Authorization",
+            "in": "header",
+            "description": "Your API token, obtained from the ClearBank Portal.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "DigitalSignature",
+            "in": "header",
+            "description": "Signed hash of the body of the request. The hash is signed by your private key.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Request-Id",
+            "in": "header",
+            "description": "A unique identifier for the request; valid for 24 hours, max length 83.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "CoP Outbound Request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CoPOutboundRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CoPOutboundRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CoPOutboundRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoPOutboundResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoPOutboundResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoPOutboundResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "CoP participant not found"
+          },
+          "424": {
+            "description": "Call to CoP participant resulted in an error"
+          }
+        }
+      }
+    },
+    "/open-banking/outbound/v1/srd/validate": {
+      "post": {
+        "tags": [
+          "SecondaryReferenceData"
+        ],
+        "summary": "This endpoint is used to confirm whether a given sort code/account number combination requires Secondary Reference Data (SRD) with Confirmation of Payee (CoP) requests.",
+                "parameters": [
+           {
+            "name": "Authorization",
+            "in": "header",
+            "description": "Your API token, obtained from the ClearBank Portal.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "DigitalSignature",
+            "in": "header",
+            "description": "Signed hash of the body of the request. The hash is signed by your private key.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Request-Id",
+            "in": "header",
+            "description": "A unique identifier for the request; valid for 24 hours, max length 83.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "SRD Validation Request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SRDValidationRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SRDValidationRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SRDValidationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SRDValidationResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SRDValidationResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SRDValidationResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CoPOutboundRequest": {
+        "required": [
+          "Identification",
+          "LegalOwnerType",
+          "OwnerName",
+          "SchemeName"
+        ],
+        "type": "object",
+        "properties": {
+          "SchemeName": {
+            "minLength": 1,
+            "type": "string",
+            "description": "Indicates the sort code and account number associated with the payee’s account. The value should always be SortCodeAccountNumber."
+          },
+          "LegalOwnerType": {
+            "minLength": 1,
+            "type": "string",
+            "description": "Nature of funds held in the account. Valid options are Personal or Business."
+          },
+          "Identification": {
+            "minLength": 1,
+            "type": "string",
+            "description": "Payee's sort code and account number, used by an Account Servicing Payment Service Provider (ASPSP) to identify the account. In case the account number contains less than 8 digits, it can be padded with preceding zeros to make the length up to 8. The format should always be SortCodeAccountNumber   (e.g., “04040412345678”)."
+          },
+          "OwnerName": {
+            "maxLength": 140,
+            "minLength": 1,
+            "type": "string",
+            "description": "OwnerName identifies the owner of the account. This must be in a structured or unstructured comma-delimited format. Both formats consist of three parts separated by commas. We recommend using the unstructured format for all CoP name verification requests. The unstructured format is valid for personal, business, and joint accounts. The full owner name string is populated in the third part (“ClearBank Ltd” would be “,,ClearBank Ltd”). The structured format is only valid for personal accounts. The three parts of the owner's name are comma-delimited (“Mr John Smith” would be “Mr, John, Smith”)."
+          },
+          "SecondaryIdentification": {
+            "maxLength": 140,
+            "minLength": 0,
+            "type": "string",
+            "description": "Payment reference information as provided by the payer. If provided, this information may be used by the payee’s ASPSP to identify the account.",
+            "nullable": true
+          },
+          "EndToEndIdentification": {
+            "maxLength": 140,
+            "minLength": 0,
+            "type": "string",
+            "description": "A unique value which can be used to identify the CoP request and then used in any subsequent payment initiations to link them to this CoP request.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Required information to perform a CoP check"
+      },
+      "CoPOutboundResponse": {
+        "type": "object",
+        "properties": {
+          "Data": {
+            "$ref": "#/components/schemas/Data"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Response contract"
+      },
+      "Data": {
+        "type": "object",
+        "properties": {
+          "VerificationReport": {
+            "$ref": "#/components/schemas/VerificationReport"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Information about the exact name registered with the payee’s account."
+      },
+      "ErrorBody": {
+        "type": "object",
+        "properties": {
+          "Reason": {
+            "type": "string",
+            "description": "The error reason.",
+            "nullable": true
+          },
+          "ParticipantName": {
+            "type": "string",
+            "description": "Name of the participant.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Error body with description."
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "Error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Error response class."
+      },
+      "SRDValidationData": {
+        "type": "object",
+        "properties": {
+          "Required": {
+            "type": "boolean",
+            "description": "Value indicating whether Secondary Reference Data is required on a CoP request."
+          },
+          "BankName": {
+            "type": "string",
+            "description": "The name of the bank that the given identification matches with.",
+            "nullable": true
+          },
+          "Identification": {
+            "type": "string",
+            "description": "The identification given in the original request.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "SRD Validation data."
+      },
+      "SRDValidationRequest": {
+        "required": [
+          "Identification",
+          "SchemeName"
+        ],
+        "type": "object",
+        "properties": {
+          "SchemeName": {
+            "minLength": 1,
+            "type": "string",
+            "description": "Indicates the sort code and account number associated with the payee’s account. The value should always be SortCodeAccountNumber."
+          },
+          "Identification": {
+            "minLength": 1,
+            "type": "string",
+            "description": "Payee's sort code and account number, used by an Account Servicing Payment Service Provider (ASPSP) to identify the account. In case the account number contains less than 8-digits, it can be padded with preceding zeros to make the length up to 8. The format should always be SortCodeAccountNumber   (e.g., “04040412345678”)."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Secondary reference data validation request"
+      },
+      "SRDValidationResponse": {
+        "type": "object",
+        "properties": {
+          "Data": {
+            "$ref": "#/components/schemas/SRDValidationData"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Response contract."
+      },
+      "VerificationReport": {
+        "required": [
+          "Matched",
+          "MatchedBank"
+        ],
+        "type": "object",
+        "properties": {
+          "Matched": {
+            "type": "boolean",
+            "description": "True if there is a match. False when there is no match or a partial match."
+          },
+          "Name": {
+            "type": "string",
+            "description": "The account holder name in case of a partial match. This will not be present if there is a true match.",
+            "nullable": true
+          },
+          "ReasonCode": {
+            "type": "string",
+            "description": "Reason code for a more detailed description of the kind of match. Defined by Pay.UK. Provided if there is no match or a partial match. This will not be present if there is a true match.",
+            "nullable": true
+          },
+          "ReasonCodeDescription": {
+            "type": "string",
+            "description": "Detailed description of the reason code, as described by Pay.UK. Provided if there is no match or a partial match. This will not be present if there is a true match.",
+            "nullable": true,
+            "readOnly": true
+          },
+          "MatchedBank": {
+            "minLength": 1,
+            "type": "string",
+            "description": "The name of the bank that the CoP check was performed with."
+          },
+          "ResponseWithinSla": {
+            "type": "boolean",
+            "description": "Time taken by the responder for the CoP request"
+          },
+          "LegalOwnerType": {
+            "type": "string",
+            "description": "Legal Owner Type used in the CoP check",
+            "nullable": true
+          },
+          "ResponderRegistrationId": {
+            "type": "string",
+            "description": "Open Banking Directory registration ID of the participant responding to the CoP request.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Additional information, including the result of the name match."
+      }
+    }
+  }
+}
