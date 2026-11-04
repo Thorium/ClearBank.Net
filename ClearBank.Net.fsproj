@@ -5,8 +5,10 @@
     <TargetFrameworks>netstandard2.0;netstandard2.1;net8.0;net10.0</TargetFrameworks>
     <PackageId>ClearBank.Net</PackageId>
     <AssemblyName>ClearBank.Net</AssemblyName>
-    <Version>1.1.0</Version>
-    <PackageReleaseNotes>v1.1.0:
+    <Version>1.1.1</Version>
+    <PackageReleaseNotes>v1.1.1:
+- FIXED: the HttpClients made here no longer follow redirects, which sent signatures and payment bodies to the redirect's host; a 3xx answer is an error
+v1.1.0:
 - BREAKING: SwaggerProvider 4.2.1: generated models take and return option for optional strings, Guid for ids, DateTimeOffset for date-times; multi-currency AccountIdentifier kind is an enum
 - CHANGED: FSharp.Core 10.1.401, FSharp.Data 8.2.0, KeyVaultSigning 1.0.13 (async signing-client cache fix)
 - CHANGED: legacy DateTime filters of unspecified kind are sent as UTC

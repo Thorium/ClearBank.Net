@@ -266,12 +266,13 @@ module ClearBankClient =
 
         { Http = http; ApiToken = apiToken; Signer = signer }
 
-    /// An HttpClient for the ClearBank API root, optionally reporting non-success responses. Keep it for the application's lifetime.
+    /// An HttpClient for the ClearBank API root, optionally reporting non-success responses. It doesn't follow redirects, which would send
+    /// signatures and payment bodies to wherever one points. Keep it for the application's lifetime.
     let createHttpClient (baseUrl: string) (logUnsuccessful: (HttpStatusCode * string -> unit) option) =
 #if NETSTANDARD
-        let transport = new HttpClientHandler(UseCookies = false) :> HttpMessageHandler
+        let transport = new HttpClientHandler(UseCookies = false, AllowAutoRedirect = false) :> HttpMessageHandler
 #else
-        let transport = new SocketsHttpHandler(UseCookies = false, PooledConnectionLifetime = TimeSpan.FromMinutes 5.) :> HttpMessageHandler
+        let transport = new SocketsHttpHandler(UseCookies = false, PooledConnectionLifetime = TimeSpan.FromMinutes 5., AllowAutoRedirect = false) :> HttpMessageHandler
 #endif
         let handler =
             match logUnsuccessful with
@@ -345,8 +346,8 @@ let internal perCall (config: ClearbankConfiguration) (signer: RequestSigner) (r
     async {
         use http =
             match config.LogUnsuccessfulHandler with
-            | None -> new HttpClient(BaseAddress = Uri config.BaseUrl)
-            | Some _ -> new HttpClient(new ErrorHandler(new HttpClientHandler(UseCookies = false)), BaseAddress = Uri config.BaseUrl)
+            | None -> new HttpClient(new HttpClientHandler(UseCookies = false, AllowAutoRedirect = false), BaseAddress = Uri config.BaseUrl)
+            | Some _ -> new HttpClient(new ErrorHandler(new HttpClientHandler(UseCookies = false, AllowAutoRedirect = false)), BaseAddress = Uri config.BaseUrl)
 
         use _subscription =
             match requestId, config.LogUnsuccessfulHandler with

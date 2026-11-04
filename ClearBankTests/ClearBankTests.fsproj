@@ -11,6 +11,7 @@
     <Compile Include="TestParameters.fs" />
     <Compile Include="Tests.fs" />
     <Compile Include="ClientTests.fs" />
+    <Compile Include="RedirectTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

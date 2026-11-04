@@ -134,7 +134,9 @@ and `ClearBank.UK.getTransactions` config pageSize pageNumber startDate endDate
 The functions above take the configuration and create an `HttpClient` per call, signing with Azure Key Vault.
 For a server, create one `ClearBankClient` for the application's lifetime and use the `Api` modules
 (`ClearBank.UK.Api`, `ClearBank.UK.MultiCurrency.Api`, `ClearBank.EU.Api`). They return `Task<Result<'T, exn * string>>`,
-take a `CancellationToken`, and share the caller's `HttpClient`.
+take a `CancellationToken`, and share the caller's `HttpClient`. Set `AllowAutoRedirect = false` on your own client's
+handler, as `ClearBankClient.createHttpClient` does: following a redirect would send signatures and payment bodies to
+whatever host it points at.
 
 ```fsharp
 open System
