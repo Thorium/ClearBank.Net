@@ -265,6 +265,44 @@ type ``Client Tests`` () =
         }
 
     [<TestMethod>]
+    member _.``reading every page goes from page 1 until one comes back empty`` () : Task =
+        task {
+            use handler =
+                new FakeClearBank(fun _ _ ->
+                    HttpStatusCode.OK, """{"transactions":[],"halLinks":[]}""")
+
+            let! none = Api.getEveryTransactionAsync (clientWith handler) (ValueSome 2) ValueNone ValueNone ct
+            equal(0, (expectOk none).Length)
+            equal(1, handler.Calls.Length)
+            StringAssert.Contains(handler.Calls.Head.PathAndQuery, "pageNumber=1")
+            StringAssert.Contains(handler.Calls.Head.PathAndQuery, "pageSize=2")
+        }
+
+    [<TestMethod>]
+    member _.``reading every page keeps each page's items, and fails if a page does`` () : Task =
+        task {
+            let mutable asked = 0
+
+            use handler =
+                new FakeClearBank(fun _ _ ->
+                    asked <- asked + 1
+
+                    match asked with
+                    | 1 -> HttpStatusCode.OK, """{"transactions":[{},{}],"halLinks":[]}"""
+                    | 2 -> HttpStatusCode.OK, """{"transactions":[{}],"halLinks":[]}"""
+                    | _ -> HttpStatusCode.OK, """{"transactions":[],"halLinks":[]}""")
+
+            let! all = Api.getEveryTransactionAsync (clientWith handler) (ValueSome 2) ValueNone ValueNone ct
+            equal(3, (expectOk all).Length)
+            equal(3, handler.Calls.Length)
+            StringAssert.Contains(handler.Calls[2].PathAndQuery, "pageNumber=3")
+
+            use failing = new FakeClearBank(fun _ _ -> HttpStatusCode.ServiceUnavailable, "")
+            let! failed = Api.getEveryTransactionAsync (clientWith failing) ValueNone ValueNone ValueNone ct
+            Assert.IsTrue(failed.IsError)
+        }
+
+    [<TestMethod>]
     member _.``virtual account transactions use the virtual path`` () : Task =
         task {
             use handler = new FakeClearBank(fun _ _ -> HttpStatusCode.OK, """{"transactions":[],"halLinks":[]}""")

@@ -3,6 +3,7 @@ module ClearBank.UK
 open System
 open System.Net.Http
 open System.Net
+open System.Threading.Tasks
 open System.Text.Json
 open SwaggerProvider
 open ClearBank.Common
@@ -397,6 +398,27 @@ module Api =
         signed client (fun () -> api.Serialize request) cancellationToken (fun signature ->
             api.V3InstitutionsByInstitutionIdAccountsPost(client.Authorization, signature, requestIdText requestId, request, cancellationToken))
 
+    /// Reads pages from the first (number 1) until one comes back empty. Waiting for the empty page costs a call, but a
+    /// short page can't be trusted: a size the API caps would look like the last page and lose the rest silently.
+    let rec private pagesFrom
+        (fetch: int -> Task<Result<'item array, exn * string>>)
+        (pageNumber: int)
+        (pages: 'item array list)
+        =
+        task {
+            match! fetch pageNumber with
+            | Error failure -> return Error failure
+            | Ok [||] -> return Ok(pages |> List.rev |> Array.concat)
+            | Ok items -> return! pagesFrom fetch (pageNumber + 1) (items :: pages)
+        }
+
+    /// One page of a list as its items; an answer without the list counts as an empty page.
+    let private itemsOf (items: 'page -> 'item array) (page: Task<Result<'page, exn * string>>) =
+        task {
+            let! result = page
+            return result |> Result.map (fun answer -> items answer |> Option.ofObj |> Option.defaultValue [||])
+        }
+
     /// Lists the real accounts with their balances (v3).
     let getAccountsAsync (client: ClearBankClient) (pageNumber: int voption) (pageSize: int voption) cancellationToken =
         (v3 client).V3InstitutionsByInstitutionIdAccountsGet(client.Authorization, ValueOption.toOption pageNumber, ValueOption.toOption pageSize, cancellationToken)
@@ -440,6 +462,20 @@ module Api =
         (v2 client).V2TransactionsGet(client.Authorization, ValueOption.toOption pageNumber, ValueOption.toOption pageSize, ValueOption.toOption startDate, ValueOption.toOption endDate)
         |> attempt cancellationToken
 
+    /// Every real account with its balances, reading page by page. See pagesFrom for how it stops.
+    let getEveryAccountAsync (client: ClearBankClient) (pageSize: int voption) cancellationToken =
+        pagesFrom
+            (fun page -> getAccountsAsync client (ValueSome page) pageSize cancellationToken |> itemsOf _.Accounts)
+            1
+            []
+
+    /// Every transaction of the institution in the dates, reading page by page. See pagesFrom for how it stops.
+    let getEveryTransactionAsync (client: ClearBankClient) (pageSize: int voption) (startDate: DateTimeOffset voption) (endDate: DateTimeOffset voption) cancellationToken =
+        pagesFrom
+            (fun page -> getTransactionsAsync client (ValueSome page) pageSize startDate endDate cancellationToken |> itemsOf _.Transactions)
+            1
+            []
+
     /// Lists a real or virtual account's transactions (v2).
     let getAccountTransactionsAsync (client: ClearBankClient) (account: AccountRef) (pageNumber: int voption) (pageSize: int voption) (startDate: DateTimeOffset voption) (endDate: DateTimeOffset voption) cancellationToken =
         let api = v2 client
@@ -451,6 +487,13 @@ module Api =
         | AccountRef.Virtual(accountId, virtualAccountId) ->
             api.V2AccountsByAccountIdVirtualByVirtualAccountIdTransactionsGet(accountId, virtualAccountId, client.Authorization, page, size, from, until)
         |> attempt cancellationToken
+
+    /// Every transaction of a real or virtual account in the dates, reading page by page. See pagesFrom for how it stops.
+    let getEveryAccountTransactionAsync (client: ClearBankClient) (account: AccountRef) (pageSize: int voption) (startDate: DateTimeOffset voption) (endDate: DateTimeOffset voption) cancellationToken =
+        pagesFrom
+            (fun page -> getAccountTransactionsAsync client account (ValueSome page) pageSize startDate endDate cancellationToken |> itemsOf _.Transactions)
+            1
+            []
 
     /// Gets one transaction of a real or virtual account (v2).
     let getAccountTransactionAsync (client: ClearBankClient) (account: AccountRef) (transactionId: Guid) cancellationToken =

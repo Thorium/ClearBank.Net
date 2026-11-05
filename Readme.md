@@ -192,9 +192,9 @@ then e.g. `await UK.Api.getAccountsAsync(client, FSharpValueOption<int>.None, FS
 
 | Area | Functions |
 |---|---|
-| Accounts | `createAccountAsync`, `getAccountsAsync`, `getAccountAsync`, `updateAccountAsync` (status, reason, owner, minimum balance), `closeAccountAsync` |
+| Accounts | `createAccountAsync`, `getAccountsAsync`, `getEveryAccountAsync` (every page), `getAccountAsync`, `updateAccountAsync` (status, reason, owner, minimum balance), `closeAccountAsync` |
 | Interest-bearing account closure | `requestAccountClosureAsync` (asynchronous; interest goes to the nominated account), `getAccountClosureAsync` |
-| Transactions | `getTransactionsAsync`, `getAccountTransactionsAsync`, `getAccountTransactionAsync`, `returnTransactionsAsync` (Bacs returns) |
+| Transactions | `getTransactionsAsync`, `getEveryTransactionAsync` and `getEveryAccountTransactionAsync` (every page), `getAccountTransactionsAsync`, `getAccountTransactionAsync`, `returnTransactionsAsync` (Bacs returns) |
 | Bacs | `getUnpaidDirectDebitsAsync`, `getUnappliedDirectCreditsAsync` |
 | Virtual accounts | `createVirtualAccountsAsync`, `getVirtualAccountsAsync`, `getAllVirtualAccountsAsync`, `getVirtualAccountAsync`, `updateVirtualAccountAsync`, `disableVirtualAccountAsync` |
 | Direct Debit mandates | `getMandatesAsync`, `cancelMandateAsync`, `returnMandateAsync`, `getMandateCollectionsAsync`, `getUnpaidCollectionsAsync` |
