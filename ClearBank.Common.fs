@@ -11,6 +11,8 @@ type KeyVaultCredentials =
 | DefaultCredentials
 | CredentialsWithOptions of Azure.Identity.DefaultAzureCredentialOptions
 
+/// PrivateKey is the API token. Printing a configuration (%A, ToString) hides it.
+[<StructuredFormatDisplay("{Display}")>]
 type ClearbankConfiguration =
     {
       BaseUrl: string
@@ -19,6 +21,9 @@ type ClearbankConfiguration =
       AzureKeyVaultCredentials: KeyVaultCredentials
       LogUnsuccessfulHandler: Option<HttpStatusCode*string -> Unit>
     }
+
+    member this.Display = $"{{ BaseUrl = {this.BaseUrl}; AzureKeyVaultName = {this.AzureKeyVaultName}; PrivateKey hidden }}"
+    override this.ToString() = this.Display
 
 type BankAccount =
 | IBAN of string
@@ -249,13 +254,16 @@ type internal LoggingHandler(inner: HttpMessageHandler, log: HttpStatusCode * st
 
 /// A ClearBank API connection: one HttpClient shared by every call (its BaseAddress is the API root),
 /// the API token sent as "Authorization: Bearer", and the signer for the DigitalSignature header.
-[<NoEquality; NoComparison>]
+/// Printing a client (%A, ToString) hides the token.
+[<NoEquality; NoComparison; StructuredFormatDisplay("{Display}")>]
 type ClearBankClient =
     { Http: HttpClient
       ApiToken: string
       Signer: RequestSigner }
 
     member internal this.Authorization = "Bearer " + this.ApiToken
+    member this.Display = "{ ApiToken hidden }"
+    override this.ToString() = this.Display
 
 module ClearBankClient =
 
@@ -341,7 +349,8 @@ let internal sendJson (client: ClearBankClient) (httpMethod: HttpMethod) (path: 
     })
 
 /// Runs one call of the configuration-based API: a per-call HttpClient, the Azure Key Vault signer,
-/// and LogUnsuccessfulHandler for this request id.
+/// and LogUnsuccessfulHandler for this request id. The caller's cancelled token cancels the Async, which AwaitTask alone would report
+/// as a failure, so Async.StartAsTask ends Canceled. A timeout is not the caller's cancellation and stays an Error.
 let internal perCall (config: ClearbankConfiguration) (signer: RequestSigner) (requestId: Guid option) (call: ClearBankClient -> CancellationToken -> Task<Result<'T, exn * string>>) =
     async {
         use http =
@@ -355,7 +364,10 @@ let internal perCall (config: ClearbankConfiguration) (signer: RequestSigner) (r
             | _ -> { new IDisposable with member _.Dispose() = () }
 
         let! cancellationToken = Async.CancellationToken
-        return! call { Http = http; ApiToken = config.PrivateKey; Signer = signer } cancellationToken |> Async.AwaitTask
+        try
+            return! call { Http = http; ApiToken = config.PrivateKey; Signer = signer } cancellationToken |> Async.AwaitTask
+        with :? OperationCanceledException as cancelled when cancellationToken.IsCancellationRequested ->
+            return! Async.FromContinuations(fun (_, _, cancel) -> cancel cancelled)
     }
 
 /// Parses a successful response body; a parse failure becomes Error (exception, body).

@@ -645,3 +645,78 @@ type ``Webhook Type Tests`` () =
         equal(Webhooks.EuWebhook.SepaInstantRecallPaymentSettled, Webhooks.EuWebhook.parse name)
         equal(name, Webhooks.EuWebhook.name Webhooks.EuWebhook.SepaInstantRecallPaymentSettled)
         equal(Webhooks.EuWebhook.Unlisted "Something.New", Webhooks.EuWebhook.parse "Something.New")
+
+/// Printing a configuration or a client doesn't show the API token.
+[<TestClass>]
+type ``Secret Tests`` () =
+
+    let token = "the-api-token-value"
+
+    let hidden (printed: string) =
+        Assert.IsFalse(printed.Contains token, printed)
+
+    [<TestMethod>]
+    member _.``a configuration prints without the token`` () =
+        let config =
+            { BaseUrl = "https://institution-api-sim.clearbank.co.uk/"
+              PrivateKey = token
+              AzureKeyVaultName = "vault"
+              AzureKeyVaultCredentials = DefaultCredentials
+              LogUnsuccessfulHandler = None }
+
+        hidden (sprintf "%A" config)
+        hidden (sprintf "%O" config)
+        hidden (config.ToString())
+        hidden $"{config}"
+        hidden (sprintf "%A" [ config ])
+
+    [<TestMethod>]
+    member _.``a client prints without the token`` () =
+        use http = new HttpClient(BaseAddress = Uri "https://institution-api-sim.clearbank.co.uk/")
+        let client = ClearBankClient.create http token (signer ())
+        hidden (sprintf "%A" client)
+        hidden (sprintf "%O" client)
+        hidden (client.ToString())
+        hidden $"{client}"
+
+    [<TestMethod>]
+    member _.``the client still sends the token`` () : Task =
+        task {
+            let handler = new FakeClearBank(fun _ _ -> HttpStatusCode.OK, "{}")
+            use http = new HttpClient(handler, BaseAddress = Uri "https://institution-api-sim.clearbank.co.uk/")
+            let client = ClearBankClient.create http token (signer ())
+            let! _ = Api.getVirtualAccountAsync client (Guid.NewGuid()) (Guid.NewGuid()) ct
+            equal("Bearer " + token, handler.Calls.Head.Headers["Authorization"])
+        }
+
+/// ClearBank's webhook pages show nonces above the Int32 range, e.g. 8553416320 in bacs-debit-payment-not-settled-webhook-v3.
+[<TestClass>]
+type ``Webhook Nonce Tests`` () =
+
+    let bigNonce = 8553416320L
+    let webhook = """{"Type":"Any","Version":1,"Payload":{},"Nonce":8553416320}"""
+
+    [<TestMethod>]
+    member _.``the response carries a nonce above the Int32 range`` () =
+        equal("""{"Nonce":8553416320}""", Webhooks.createResponsePlain bigNonce)
+
+    [<TestMethod>]
+    member _.``a signed response carries a nonce above the Int32 range`` () : Task =
+        task {
+            use request = new HttpRequestMessage()
+            use! response = Webhooks.createSignedResponseAsync (signer ()) request bigNonce ct
+            let! body = response.Content.ReadAsStringAsync()
+            equal("""{"Nonce":8553416320}""", body)
+        }
+
+    [<TestMethod>]
+    member _.``a nonce in the Int32 range keeps its response`` () =
+        equal("""{"Nonce":123456789}""", Webhooks.createResponsePlain 123456789L)
+
+    [<TestMethod>]
+    member _.``a UK webhook reads a nonce above the Int32 range`` () =
+        equal(string bigNonce, string (Webhooks.parsePaymentsCallUK webhook).Nonce)
+
+    [<TestMethod>]
+    member _.``an EU webhook reads a nonce above the Int32 range`` () =
+        equal(string bigNonce, string (Webhooks.parsePaymentsCallEU webhook).Nonce)

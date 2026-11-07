@@ -5,7 +5,7 @@ open FSharp.Data.JsonProvider
 
 [<Sealed>]
 type WebHookResponse (nonce:int64) =
-    member val Nonce = nonce |> Convert.ToInt32
+    member val Nonce = nonce
 
 let internal cbSerializerSettings = Newtonsoft.Json.JsonSerializerSettings(MissingMemberHandling = Newtonsoft.Json.MissingMemberHandling.Error)
 
@@ -464,7 +464,7 @@ module EU =
     "PaymentId": "c7c4402a-56a6-4382-a31a-0ca32099ca4f",
     "EndToEndId": "8ufIvXRF6gDpWcFnLl4GruLZLQsAGCzFa4F"
   },
-  "Nonce": 2068152292
+  "Nonce": 5800496862
 },{
   "Type": "Sepa.Instant.RecallPayment.Settled",
   "Version": 2,

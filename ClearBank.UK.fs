@@ -387,7 +387,7 @@ module Api =
         let api = v1 client
         let payload = JsonDocument.Parse("""{"institutionId": "string","body": "hello world!"}""") |> box
         signed client (fun () -> api.Serialize payload) cancellationToken (fun signature ->
-            api.V1TestPost(client.Authorization, signature, requestIdText requestId, payload))
+            api.V1TestPost(client.Authorization, signature, requestIdText requestId, payload, cancellationToken))
 
     // Accounts
 
@@ -459,7 +459,7 @@ module Api =
 
     /// Lists the institution's transactions (v2).
     let getTransactionsAsync (client: ClearBankClient) (pageNumber: int voption) (pageSize: int voption) (startDate: DateTimeOffset voption) (endDate: DateTimeOffset voption) cancellationToken =
-        (v2 client).V2TransactionsGet(client.Authorization, ValueOption.toOption pageNumber, ValueOption.toOption pageSize, ValueOption.toOption startDate, ValueOption.toOption endDate)
+        (v2 client).V2TransactionsGet(client.Authorization, ValueOption.toOption pageNumber, ValueOption.toOption pageSize, ValueOption.toOption startDate, ValueOption.toOption endDate, cancellationToken = cancellationToken)
         |> attempt cancellationToken
 
     /// Every real account with its balances, reading page by page. See pagesFrom for how it stops.
@@ -483,9 +483,9 @@ module Api =
 
         match account with
         | AccountRef.Real accountId ->
-            api.V2AccountsByAccountIdTransactionsGet(accountId, client.Authorization, page, size, from, until)
+            api.V2AccountsByAccountIdTransactionsGet(accountId, client.Authorization, page, size, from, until, cancellationToken = cancellationToken)
         | AccountRef.Virtual(accountId, virtualAccountId) ->
-            api.V2AccountsByAccountIdVirtualByVirtualAccountIdTransactionsGet(accountId, virtualAccountId, client.Authorization, page, size, from, until)
+            api.V2AccountsByAccountIdVirtualByVirtualAccountIdTransactionsGet(accountId, virtualAccountId, client.Authorization, page, size, from, until, cancellationToken = cancellationToken)
         |> attempt cancellationToken
 
     /// Every transaction of a real or virtual account in the dates, reading page by page. See pagesFrom for how it stops.
@@ -501,9 +501,9 @@ module Api =
 
         match account with
         | AccountRef.Real accountId ->
-            api.V2AccountsByAccountIdTransactionsByTransactionIdGet(accountId, transactionId, client.Authorization)
+            api.V2AccountsByAccountIdTransactionsByTransactionIdGet(accountId, transactionId, client.Authorization, cancellationToken)
         | AccountRef.Virtual(accountId, virtualAccountId) ->
-            api.V2AccountsByAccountIdVirtualByVirtualAccountIdTransactionsByTransactionIdGet(accountId, virtualAccountId, transactionId, client.Authorization)
+            api.V2AccountsByAccountIdVirtualByVirtualAccountIdTransactionsByTransactionIdGet(accountId, virtualAccountId, transactionId, client.Authorization, cancellationToken)
         |> attempt cancellationToken
 
     /// Returns Bacs Direct Debit or Direct Credit transactions as (transaction id, reason code); valid on the entry day,
@@ -520,9 +520,9 @@ module Api =
         signed client (fun () -> api.Serialize request) cancellationToken (fun signature ->
             match account with
             | AccountRef.Real accountId ->
-                api.V1AccountsByAccountIdTransactionsReturnsPost(accountId, client.Authorization, signature, requestIdText requestId, request)
+                api.V1AccountsByAccountIdTransactionsReturnsPost(accountId, client.Authorization, signature, requestIdText requestId, request, cancellationToken)
             | AccountRef.Virtual(accountId, virtualAccountId) ->
-                api.V1AccountsByAccountIdVirtualByVirtualAccountIdTransactionsReturnsPost(accountId, virtualAccountId, client.Authorization, signature, requestIdText requestId, request))
+                api.V1AccountsByAccountIdVirtualByVirtualAccountIdTransactionsReturnsPost(accountId, virtualAccountId, client.Authorization, signature, requestIdText requestId, request, cancellationToken))
 
     /// Lists unpaid Bacs Direct Debits for a sort code.
     let getUnpaidDirectDebitsAsync (client: ClearBankClient) (sortCode: string) (query: BacsItemQuery) (pageNumber: int voption) (pageSize: int voption) cancellationToken =
@@ -530,7 +530,7 @@ module Api =
             sortCode.Replace("-", ""), client.Authorization, ValueOption.toOption query.ReasonCode, ValueOption.toOption query.ServiceUserNumber, ValueOption.toOption query.PaymentReference,
             ValueOption.toOption query.ProcessingDateFrom, ValueOption.toOption query.ProcessingDateTo,
             query.Amount |> ValueOption.map float |> ValueOption.toOption, List.toArray query.TransactionCodes,
-            ValueOption.toOption pageNumber, ValueOption.toOption pageSize)
+            ValueOption.toOption pageNumber, ValueOption.toOption pageSize, cancellationToken)
         |> attempt cancellationToken
 
     /// Lists unapplied Bacs Direct Credits for a sort code.
@@ -539,7 +539,7 @@ module Api =
             sortCode.Replace("-", ""), client.Authorization, ValueOption.toOption query.ReasonCode, ValueOption.toOption query.ServiceUserNumber, ValueOption.toOption query.PaymentReference,
             ValueOption.toOption query.ProcessingDateFrom, ValueOption.toOption query.ProcessingDateTo,
             query.Amount |> ValueOption.map float |> ValueOption.toOption, List.toArray query.TransactionCodes,
-            ValueOption.toOption pageNumber, ValueOption.toOption pageSize)
+            ValueOption.toOption pageNumber, ValueOption.toOption pageSize, cancellationToken)
         |> attempt cancellationToken
 
     // Virtual accounts
@@ -558,21 +558,21 @@ module Api =
             |> V2Models.Binding.VirtualAccounts.CreateVirtualAccountsRequest
 
         signed client (fun () -> api.Serialize request) cancellationToken (fun signature ->
-            api.V2AccountsByAccountIdVirtualPost(accountId, client.Authorization, signature, requestIdText requestId, request))
+            api.V2AccountsByAccountIdVirtualPost(accountId, client.Authorization, signature, requestIdText requestId, request, cancellationToken))
 
     /// Lists the virtual accounts under a real account (v2).
     let getVirtualAccountsAsync (client: ClearBankClient) (accountId: Guid) (pageNumber: int voption) (pageSize: int voption) cancellationToken =
-        (v2 client).V2AccountsByAccountIdVirtualGet(accountId, client.Authorization, ValueOption.toOption pageNumber, ValueOption.toOption pageSize)
+        (v2 client).V2AccountsByAccountIdVirtualGet(accountId, client.Authorization, ValueOption.toOption pageNumber, ValueOption.toOption pageSize, cancellationToken)
         |> attempt cancellationToken
 
     /// Lists every virtual account of the institution (v1).
     let getAllVirtualAccountsAsync (client: ClearBankClient) (pageNumber: int voption) (pageSize: int voption) cancellationToken =
-        (v1 client).V1AccountsVirtualGet(client.Authorization, ValueOption.toOption pageNumber, ValueOption.toOption pageSize)
+        (v1 client).V1AccountsVirtualGet(client.Authorization, ValueOption.toOption pageNumber, ValueOption.toOption pageSize, cancellationToken)
         |> attempt cancellationToken
 
     /// Gets a virtual account (v2).
     let getVirtualAccountAsync (client: ClearBankClient) (accountId: Guid) (virtualAccountId: Guid) cancellationToken =
-        (v2 client).V2AccountsByAccountIdVirtualByVirtualAccountIdGet(accountId, virtualAccountId, client.Authorization)
+        (v2 client).V2AccountsByAccountIdVirtualByVirtualAccountIdGet(accountId, virtualAccountId, client.Authorization, cancellationToken)
         |> attempt cancellationToken
 
     /// Changes a virtual account's owner details.
@@ -585,7 +585,7 @@ module Api =
 
     /// Disables a virtual account.
     let disableVirtualAccountAsync (client: ClearBankClient) (requestId: Guid) (accountId: Guid) (virtualAccountId: Guid) cancellationToken =
-        (v1 client).V1AccountsByAccountIdVirtualByVirtualAccountIdDelete(accountId, virtualAccountId, client.Authorization, requestIdText requestId)
+        (v1 client).V1AccountsByAccountIdVirtualByVirtualAccountIdDelete(accountId, virtualAccountId, client.Authorization, requestIdText requestId, cancellationToken)
         |> attempt cancellationToken
 
     // Bacs Direct Debit mandates
@@ -596,9 +596,9 @@ module Api =
         let page, size = ValueOption.toOption pageNumber, ValueOption.toOption pageSize
 
         match account with
-        | AccountRef.Real accountId -> api.V2AccountsByAccountIdMandatesGet(accountId, client.Authorization, page, size)
+        | AccountRef.Real accountId -> api.V2AccountsByAccountIdMandatesGet(accountId, client.Authorization, page, size, cancellationToken)
         | AccountRef.Virtual(accountId, virtualAccountId) ->
-            api.V2AccountsByAccountIdVirtualByVirtualAccountIdMandatesGet(accountId, virtualAccountId, client.Authorization, page, size)
+            api.V2AccountsByAccountIdVirtualByVirtualAccountIdMandatesGet(accountId, virtualAccountId, client.Authorization, page, size, cancellationToken)
         |> attempt cancellationToken
 
     /// Cancels a Direct Debit mandate with a Bacs reason code.
@@ -609,10 +609,10 @@ module Api =
         signed client (fun () -> api.Serialize request) cancellationToken (fun signature ->
             match account with
             | AccountRef.Real accountId ->
-                api.V1AccountsByAccountIdMandatesByMandateIdDelete(accountId, mandateId, client.Authorization, signature, requestIdText requestId, request)
+                api.V1AccountsByAccountIdMandatesByMandateIdDelete(accountId, mandateId, client.Authorization, signature, requestIdText requestId, request, cancellationToken)
             | AccountRef.Virtual(accountId, virtualAccountId) ->
                 api.V1AccountsByAccountIdVirtualByVirtualAccountIdMandatesByMandateIdDelete(
-                    accountId, virtualAccountId, mandateId, client.Authorization, signature, requestIdText requestId, request))
+                    accountId, virtualAccountId, mandateId, client.Authorization, signature, requestIdText requestId, request, cancellationToken))
 
     /// Rejects (returns) a Direct Debit mandate.
     let returnMandateAsync (client: ClearBankClient) (requestId: Guid) (account: AccountRef) (mandateId: Guid) (rejectionReason: string) cancellationToken =
@@ -622,10 +622,10 @@ module Api =
         signed client (fun () -> api.Serialize request) cancellationToken (fun signature ->
             match account with
             | AccountRef.Real accountId ->
-                api.V1AccountsByAccountIdMandatesByMandateIdReturnsPost(accountId, mandateId, client.Authorization, signature, requestIdText requestId, request)
+                api.V1AccountsByAccountIdMandatesByMandateIdReturnsPost(accountId, mandateId, client.Authorization, signature, requestIdText requestId, request, cancellationToken)
             | AccountRef.Virtual(accountId, virtualAccountId) ->
                 api.V1AccountsByAccountIdVirtualByVirtualAccountIdMandatesByMandateIdReturnsPost(
-                    accountId, virtualAccountId, mandateId, client.Authorization, signature, requestIdText requestId, request))
+                    accountId, virtualAccountId, mandateId, client.Authorization, signature, requestIdText requestId, request, cancellationToken))
 
     /// Lists the collections taken under a mandate (v2).
     let getMandateCollectionsAsync (client: ClearBankClient) (account: AccountRef) (mandateId: Guid) (startDate: DateTimeOffset voption) (endDate: DateTimeOffset voption) (pageNumber: int voption) (pageSize: int voption) cancellationToken =
@@ -634,10 +634,10 @@ module Api =
 
         match account with
         | AccountRef.Real accountId ->
-            api.V2AccountsByAccountIdMandatesByMandateIdCollectionsGet(accountId, mandateId, client.Authorization, from, until, page, size)
+            api.V2AccountsByAccountIdMandatesByMandateIdCollectionsGet(accountId, mandateId, client.Authorization, from, until, page, size, cancellationToken)
         | AccountRef.Virtual(accountId, virtualAccountId) ->
             api.V2AccountsByAccountIdVirtualByVirtualAccountIdMandatesByMandateIdCollectionsGet(
-                accountId, virtualAccountId, mandateId, client.Authorization, from, until, page, size)
+                accountId, virtualAccountId, mandateId, client.Authorization, from, until, page, size, cancellationToken)
         |> attempt cancellationToken
 
     /// Lists unpaid Direct Debit collections of a real or virtual account (v2).
@@ -648,9 +648,9 @@ module Api =
 
         match account with
         | AccountRef.Real accountId ->
-            api.V2AccountsByAccountIdMandatesUnpaidGet(accountId, client.Authorization, from, until, sun, ref, page, size)
+            api.V2AccountsByAccountIdMandatesUnpaidGet(accountId, client.Authorization, from, until, sun, ref, page, size, cancellationToken)
         | AccountRef.Virtual(accountId, virtualAccountId) ->
-            api.V2AccountsByAccountIdVirtualByVirtualAccountIdMandatesUnpaidGet(accountId, virtualAccountId, client.Authorization, from, until, sun, ref, page, size)
+            api.V2AccountsByAccountIdVirtualByVirtualAccountIdMandatesUnpaidGet(accountId, virtualAccountId, client.Authorization, from, until, sun, ref, page, size, cancellationToken)
         |> attempt cancellationToken
 
     // Payments
