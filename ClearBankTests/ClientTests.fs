@@ -664,8 +664,8 @@ type ``Secret Tests`` () =
               AzureKeyVaultCredentials = DefaultCredentials
               LogUnsuccessfulHandler = None }
 
-        hidden (sprintf "%A" config)
-        hidden (sprintf "%O" config)
+        hidden $"%A{config}"
+        hidden $"%O{config}"
         hidden (config.ToString())
         hidden $"{config}"
         hidden (sprintf "%A" [ config ])
@@ -674,8 +674,8 @@ type ``Secret Tests`` () =
     member _.``a client prints without the token`` () =
         use http = new HttpClient(BaseAddress = Uri "https://institution-api-sim.clearbank.co.uk/")
         let client = ClearBankClient.create http token (signer ())
-        hidden (sprintf "%A" client)
-        hidden (sprintf "%O" client)
+        hidden $"%A{client}"
+        hidden $"%O{client}"
         hidden (client.ToString())
         hidden $"{client}"
 

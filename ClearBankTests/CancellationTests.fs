@@ -260,7 +260,7 @@ type ``Cancellation Tests`` () =
             let silent, config = silentPort None
             use _ = silent
             use other = new CancellationTokenSource()
-            other.Cancel()
+            do! other.CancelAsync()
 
             let call =
                 perCall config RequestSigner.unavailable None (fun _ _ ->
