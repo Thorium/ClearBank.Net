@@ -361,9 +361,12 @@ let chapsAccount (account: BankAccount) : obj =
 /// Task-based operations over a shared ClearBankClient. Failures are Error (exception, response body).
 module Api =
 
-    let private v1 (client: ClearBankClient) = ClearBankSwaggerV1.Client client.Http
-    let private v2 (client: ClearBankClient) = ClearBankSwaggerV2.Client client.Http
-    let private v3 (client: ClearBankClient) = ClearBankOpenApiV3Accounts.Client client.Http
+    let private v1 (client: ClearBankClient) = ClearBankSwaggerV1.Client client.CheckedHttp
+    let private v2 (client: ClearBankClient) = ClearBankSwaggerV2.Client client.CheckedHttp
+    let private v3 (client: ClearBankClient) = ClearBankOpenApiV3Accounts.Client client.CheckedHttp
+
+    /// Payment amounts go out with two decimals. An amount they don't hold exactly fails the serialization, which
+    /// makes the call an Error before anything is signed or sent.
     let private paymentOptions =
         let options = JsonSerializerOptions()
         options.Converters.Add(TwoDecimalsConverter())
@@ -377,10 +380,16 @@ module Api =
         options.Converters.Add(TwoDecimalsConverter())
         options
 
-    let private sterling (client: ClearBankClient) = SterlingV1.Client(client.Http, omitUnset)
-    let private copOutbound (client: ClearBankClient) = CopOutboundV1.Client(client.Http, omitUnset)
-    let private copAccounts (client: ClearBankClient) = CopAccountsV1.Client(client.Http, omitUnset)
-    let private chaps (client: ClearBankClient) = ChapsV6.Client(client.Http, chapsOptions)
+    /// omitUnset, with numbers written as the decimals they stand for (an account's minimum balance).
+    let private sterlingOptions =
+        let options = JsonSerializerOptions(DefaultIgnoreCondition = Serialization.JsonIgnoreCondition.WhenWritingNull)
+        options.Converters.Add(DecimalTextConverter())
+        options
+
+    let private sterling (client: ClearBankClient) = SterlingV1.Client(client.CheckedHttp, sterlingOptions)
+    let private copOutbound (client: ClearBankClient) = CopOutboundV1.Client(client.CheckedHttp, omitUnset)
+    let private copAccounts (client: ClearBankClient) = CopAccountsV1.Client(client.CheckedHttp, omitUnset)
+    let private chaps (client: ClearBankClient) = ChapsV6.Client(client.CheckedHttp, chapsOptions)
 
     /// Calls the signed test endpoint.
     let testAsync (client: ClearBankClient) (requestId: Guid) cancellationToken =
@@ -400,23 +409,38 @@ module Api =
 
     /// Reads pages from the first (number 1) until one comes back empty. Waiting for the empty page costs a call, but a
     /// short page can't be trusted: a size the API caps would look like the last page and lose the rest silently.
+    /// A page equal to the one before it (compared as the text of its items) is an Error: a server that repeats a
+    /// page would never send the empty one.
     let rec private pagesFrom
         (fetch: int -> Task<Result<'item array, exn * string>>)
+        (text: 'item array -> string)
         (pageNumber: int)
+        (previous: string voption)
         (pages: 'item array list)
         =
         task {
             match! fetch pageNumber with
             | Error failure -> return Error failure
             | Ok [||] -> return Ok(pages |> List.rev |> Array.concat)
-            | Ok items -> return! pagesFrom fetch (pageNumber + 1) (items :: pages)
+            | Ok items ->
+                let page = text items
+
+                if previous = ValueSome page then
+                    return Error(InvalidOperationException $"Page {pageNumber} repeats page {pageNumber - 1}, so the list cannot be read to its end." :> exn, "")
+                else
+                    return! pagesFrom fetch text (pageNumber + 1) (ValueSome page) (items :: pages)
         }
 
-    /// One page of a list as its items; an answer without the list counts as an empty page.
+    /// One page of a list as its items. An answer without the list (or no answer at all) is an Error: read as an empty
+    /// page it would end the list early.
     let private itemsOf (items: 'page -> 'item array) (page: Task<Result<'page, exn * string>>) =
         task {
-            let! result = page
-            return result |> Result.map (fun answer -> items answer |> Option.ofObj |> Option.defaultValue [||])
+            match! page with
+            | Error failure -> return Error failure
+            | Ok answer ->
+                match (if isNull (box answer) then null else items answer) with
+                | null -> return Error(InvalidOperationException "The page has no list of items." :> exn, "")
+                | list -> return Ok list
         }
 
     /// Lists the real accounts with their balances (v3).
@@ -429,7 +453,7 @@ module Api =
         (v3 client).V3InstitutionsByInstitutionIdAccountsByAccountIdGet(accountId, client.Authorization, cancellationToken)
         |> attempt cancellationToken
 
-    /// Changes a real account's status, owner or minimum balance.
+    /// Changes a real account's status, owner or minimum balance. The minimum balance is sent as the decimal given.
     let updateAccountAsync (client: ClearBankClient) (requestId: Guid) (accountId: Guid) (update: AccountUpdate) cancellationToken =
         let api = sterling client
         let request = Wire.accountUpdate update
@@ -462,18 +486,24 @@ module Api =
         (v2 client).V2TransactionsGet(client.Authorization, ValueOption.toOption pageNumber, ValueOption.toOption pageSize, ValueOption.toOption startDate, ValueOption.toOption endDate, cancellationToken = cancellationToken)
         |> attempt cancellationToken
 
-    /// Every real account with its balances, reading page by page. See pagesFrom for how it stops.
+    /// Every real account with its balances, reading page by page until an empty page. A failed page, a page without
+    /// its list or a repeated page makes the whole read an Error.
     let getEveryAccountAsync (client: ClearBankClient) (pageSize: int voption) cancellationToken =
         pagesFrom
             (fun page -> getAccountsAsync client (ValueSome page) pageSize cancellationToken |> itemsOf _.Accounts)
+            (box >> (v3 client).Serialize)
             1
+            ValueNone
             []
 
-    /// Every transaction of the institution in the dates, reading page by page. See pagesFrom for how it stops.
+    /// Every transaction of the institution in the dates, reading page by page until an empty page. A failed page, a
+    /// page without its list or a repeated page makes the whole read an Error.
     let getEveryTransactionAsync (client: ClearBankClient) (pageSize: int voption) (startDate: DateTimeOffset voption) (endDate: DateTimeOffset voption) cancellationToken =
         pagesFrom
             (fun page -> getTransactionsAsync client (ValueSome page) pageSize startDate endDate cancellationToken |> itemsOf _.Transactions)
+            (box >> (v2 client).Serialize)
             1
+            ValueNone
             []
 
     /// Lists a real or virtual account's transactions (v2).
@@ -488,11 +518,14 @@ module Api =
             api.V2AccountsByAccountIdVirtualByVirtualAccountIdTransactionsGet(accountId, virtualAccountId, client.Authorization, page, size, from, until, cancellationToken = cancellationToken)
         |> attempt cancellationToken
 
-    /// Every transaction of a real or virtual account in the dates, reading page by page. See pagesFrom for how it stops.
+    /// Every transaction of a real or virtual account in the dates, reading page by page until an empty page. A failed
+    /// page, a page without its list or a repeated page makes the whole read an Error.
     let getEveryAccountTransactionAsync (client: ClearBankClient) (account: AccountRef) (pageSize: int voption) (startDate: DateTimeOffset voption) (endDate: DateTimeOffset voption) cancellationToken =
         pagesFrom
             (fun page -> getAccountTransactionsAsync client account (ValueSome page) pageSize startDate endDate cancellationToken |> itemsOf _.Transactions)
+            (box >> (v2 client).Serialize)
             1
+            ValueNone
             []
 
     /// Gets one transaction of a real or virtual account (v2).
@@ -524,23 +557,48 @@ module Api =
             | AccountRef.Virtual(accountId, virtualAccountId) ->
                 api.V1AccountsByAccountIdVirtualByVirtualAccountIdTransactionsReturnsPost(accountId, virtualAccountId, client.Authorization, signature, requestIdText requestId, request, cancellationToken))
 
+    /// Builds a request under the invariant culture: the generated clients format a query number with the current
+    /// culture, and a decimal comma is not a number to the API.
+    let private invariantly (request: unit -> 'T) =
+        let culture = Globalization.CultureInfo.CurrentCulture
+        Globalization.CultureInfo.CurrentCulture <- Globalization.CultureInfo.InvariantCulture
+
+        try
+            request ()
+        finally
+            Globalization.CultureInfo.CurrentCulture <- culture
+
+    /// A sort code as its path segment, without hyphens.
+    let private sortCodeSegment (sortCode: string) =
+        pathSegment (nameof sortCode) (if isNull sortCode then null else sortCode.Replace("-", ""))
+
     /// Lists unpaid Bacs Direct Debits for a sort code.
     let getUnpaidDirectDebitsAsync (client: ClearBankClient) (sortCode: string) (query: BacsItemQuery) (pageNumber: int voption) (pageSize: int voption) cancellationToken =
-        (v1 client).V1TransactionsBySortCodeDirectDebitUnpaidGet(
-            sortCode.Replace("-", ""), client.Authorization, ValueOption.toOption query.ReasonCode, ValueOption.toOption query.ServiceUserNumber, ValueOption.toOption query.PaymentReference,
-            ValueOption.toOption query.ProcessingDateFrom, ValueOption.toOption query.ProcessingDateTo,
-            query.Amount |> ValueOption.map float |> ValueOption.toOption, List.toArray query.TransactionCodes,
-            ValueOption.toOption pageNumber, ValueOption.toOption pageSize, cancellationToken)
-        |> attempt cancellationToken
+        attempt cancellationToken (async {
+            let code = sortCodeSegment sortCode
+
+            return!
+                invariantly (fun () ->
+                    (v1 client).V1TransactionsBySortCodeDirectDebitUnpaidGet(
+                        code, client.Authorization, ValueOption.toOption query.ReasonCode, ValueOption.toOption query.ServiceUserNumber, ValueOption.toOption query.PaymentReference,
+                        ValueOption.toOption query.ProcessingDateFrom, ValueOption.toOption query.ProcessingDateTo,
+                        query.Amount |> ValueOption.map float |> ValueOption.toOption, List.toArray query.TransactionCodes,
+                        ValueOption.toOption pageNumber, ValueOption.toOption pageSize, cancellationToken))
+        })
 
     /// Lists unapplied Bacs Direct Credits for a sort code.
     let getUnappliedDirectCreditsAsync (client: ClearBankClient) (sortCode: string) (query: BacsItemQuery) (pageNumber: int voption) (pageSize: int voption) cancellationToken =
-        (v1 client).V1TransactionsBySortCodeDirectCreditUnappliedGet(
-            sortCode.Replace("-", ""), client.Authorization, ValueOption.toOption query.ReasonCode, ValueOption.toOption query.ServiceUserNumber, ValueOption.toOption query.PaymentReference,
-            ValueOption.toOption query.ProcessingDateFrom, ValueOption.toOption query.ProcessingDateTo,
-            query.Amount |> ValueOption.map float |> ValueOption.toOption, List.toArray query.TransactionCodes,
-            ValueOption.toOption pageNumber, ValueOption.toOption pageSize, cancellationToken)
-        |> attempt cancellationToken
+        attempt cancellationToken (async {
+            let code = sortCodeSegment sortCode
+
+            return!
+                invariantly (fun () ->
+                    (v1 client).V1TransactionsBySortCodeDirectCreditUnappliedGet(
+                        code, client.Authorization, ValueOption.toOption query.ReasonCode, ValueOption.toOption query.ServiceUserNumber, ValueOption.toOption query.PaymentReference,
+                        ValueOption.toOption query.ProcessingDateFrom, ValueOption.toOption query.ProcessingDateTo,
+                        query.Amount |> ValueOption.map float |> ValueOption.toOption, List.toArray query.TransactionCodes,
+                        ValueOption.toOption pageNumber, ValueOption.toOption pageSize, cancellationToken))
+        })
 
     // Virtual accounts
 
@@ -656,8 +714,11 @@ module Api =
     // Payments
 
     /// Posts Faster Payments created with createPaymentInstruction (v3). Payments to ClearBank-held accounts settle as internal transfers.
+    /// Ok means the batch was received (202), not that each payment was accepted: read every item of Transactions,
+    /// whose Response is "Accepted" or the reason it was rejected. Outcomes after that arrive as webhooks.
+    /// An amount that two decimals don't hold exactly is an Error and nothing is sent.
     let transferPaymentsAsync (client: ClearBankClient) (requestId: Guid) paymentInstructions cancellationToken =
-        let api = FpsPaymentsV3.Client(client.Http, paymentOptions)
+        let api = FpsPaymentsV3.Client(client.CheckedHttp, paymentOptions)
         let request = FpsPaymentsV3.BatchCreateCreditTransferRequest(paymentInstructions = paymentInstructions)
         signed client (fun () -> api.Serialize request) cancellationToken (fun signature ->
             api.Post(client.Authorization, signature, requestIdText requestId, request, cancellationToken))
@@ -746,7 +807,7 @@ let getAccountTransaction config (accountId:string) (transactionId:string) =
     perCall config RequestSigner.unavailable None (fun client ct ->
         attempt ct (async {
             let account, transaction = Guid.Parse accountId, Guid.Parse transactionId
-            return! (ClearBankSwaggerV2.Client client.Http).V2AccountsByAccountIdTransactionsByTransactionIdGet(account, transaction, client.Authorization, ct)
+            return! (ClearBankSwaggerV2.Client client.CheckedHttp).V2AccountsByAccountIdTransactionsByTransactionIdGet(account, transaction, client.Authorization, ct)
         }))
 
 /// Post payments created with createPaymentInstruction
@@ -778,7 +839,7 @@ module MultiCurrency =
     /// Task-based multi-currency operations over a shared ClearBankClient. Failures are Error (exception, response body).
     module Api =
 
-        let private transactions (client: ClearBankClient) = MccyTransactionsV1.Client client.Http
+        let private transactions (client: ClearBankClient) = MccyTransactionsV1.Client client.CheckedHttp
 
         let private paymentOptions =
             let options = JsonSerializerOptions()
@@ -850,19 +911,25 @@ module MultiCurrency =
 
         /// Posts payments created with MccyPaymentsV1.PaymentRequestItem.
         let transferPaymentsAsync (client: ClearBankClient) (requestId: Guid) batchId isoCurrencyCode paymentInstructions cancellationToken =
-            let api = MccyPaymentsV1.Client(client.Http, paymentOptions)
+            let api = MccyPaymentsV1.Client(client.CheckedHttp, paymentOptions)
             let request = MccyPaymentsV1.PaymentRequest(isoCurrencyCode, paymentInstructions, batchId)
             signed client (fun () -> api.Serialize request) cancellationToken (fun signature ->
                 api.PostV1MccyPayments(client.Authorization, signature, requestIdText requestId, request, cancellationToken))
 
         /// Cancels a payment batch, or one payment of it by end-to-end id, while it is still cancellable.
+        /// Each id is one escaped path segment; an empty, "." or ".." id is an Error and nothing is sent, because it
+        /// would address the batch or another resource.
         let cancelPaymentsAsync (client: ClearBankClient) (requestId: Guid) (batchId: string) (endToEndId: string voption) cancellationToken =
-            let api = MccyPaymentsV1.Client(client.Http, paymentOptions)
+            attempt cancellationToken (async {
+                let api = MccyPaymentsV1.Client(client.CheckedHttp, paymentOptions)
+                let batch = pathSegment (nameof batchId) batchId
 
-            match endToEndId with
-            | ValueSome pid -> api.DeleteV1MccyPayment1(client.Authorization, requestIdText requestId, batchId, pid, cancellationToken)
-            | ValueNone -> api.DeleteV1MccyPayment(client.Authorization, requestIdText requestId, batchId, cancellationToken)
-            |> attempt cancellationToken
+                match endToEndId with
+                | ValueSome pid ->
+                    let payment = pathSegment (nameof endToEndId) pid
+                    return! api.DeleteV1MccyPayment1(client.Authorization, requestIdText requestId, batch, payment, cancellationToken)
+                | ValueNone -> return! api.DeleteV1MccyPayment(client.Authorization, requestIdText requestId, batch, cancellationToken)
+            })
 
     /// Creates a new account
     let createNewAccount config azureKeyVaultCertificateName (requestId:Guid) (sortcode:string) accountName ownerName (accountKind:AccountKind) isoCurrencySymbols identifiers productId customerId =

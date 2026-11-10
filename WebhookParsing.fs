@@ -74,15 +74,15 @@ module UK =
         },
         "ActualEndToEndTransactionId": "e6e7ab2a97d1",
         "DirectDebitMandateId": "cbf17eb8-9e49-2043-2eca-0dae05e27fe5",
-        "TransactionCode": "99",
-        "ServiceUserNumber": "030201",
+        "TransactionCode": "Z4",
+        "ServiceUserNumber": "030201string",
         "BacsTransactionId": "3ec6f5b0-0e6b-a30b-7dc4-cdcc0751d448",
         "BacsTransactionDescription": "CreditContraTransactionSettled",
         "TransactionType": "DirectCredit",
         "TransactionSource": "CardProcessor",
         "SupplementaryData": [
             {
-                "Name": "20",
+                "Name": "TransactionReferenceNumber",
                 "Value": "AJF9384DGSB48Sd"
             },
             {
@@ -120,14 +120,14 @@ module UK =
             },
             "Creditors": [
                 {
-                    "Reference": "b4e062e244c449f8afc7e2a941562768",
+                    "Reference": "b4e062e244c449f8afc7e2a941562768string",
                     "Amount": 17.95,
                     "CurrencyCode": "GBP",
                     "IBAN": "GB00CUBK44556687654321",
                     "BBAN": "CUBK44556687654321"
                 },
                 {
-                    "Reference": "0bae808d96bb42a6a892bc9ade169993",
+                    "Reference": "0bae808d96bb42a6a892bc9ade169993string",
                     "Amount": 17.95,
                     "CurrencyCode": "GBP",
                     "IBAN": "GB00CUBK11223312345678",
@@ -164,7 +164,7 @@ module UK =
             },
             "Creditors": [
                 {
-                    "Reference": "86671a4add96f7a9cc569a6a4a601b38",
+                    "Reference": "86671a4add96f7a9cc569a6a4a601b38string",
                     "Amount": 17.95,
                     "CurrencyCode": "GBP",
                     "IBAN": "GB00CUBK44556687654321",
@@ -192,7 +192,7 @@ module UK =
         "TimestampModified": "2018-08-01T23:01:04.635Z",
         "CurrencyCode": "GBP",
         "DebitCreditCode": "Credit",
-        "Reference": "06a87c63c88c84b99294d910e283cae6",
+        "Reference": "06a87c63c88c84b99294d910e283cae6string",
         "IsReturn": false,
         "CancellationReason": "Beneficiary account name does not match beneficiary account number",
         "CancellationCode": "CB_AccountNameInvalid",
@@ -222,7 +222,7 @@ module UK =
       "IBAN": "GB00CUBK44556687654321"
     },
     "TransactionAmount": 88.52,
-    "PaymentReference": "ee9a790ea56c142c6b538916c8bd6bcc",
+    "PaymentReference": "ee9a790ea56c142c6b538916c8bd6bccstring",
     "EndToEndTransactionId": "5e30e0b4bfb0"
   },
   "Nonce": 1082937278
@@ -243,7 +243,7 @@ module UK =
     "IBAN": "GB00CUBK11223312345678"
 },
   "TransactionAmount": 88.52,
-  "PaymentReference": "a6f3c732a6a0b2a8018a06e10c6ecae2",
+  "PaymentReference": "a6f3c732a6a0b2a8018a06e10c6ecae2string",
   "EndToEndTransactionId": "b0c50dc87f86"
 },
   "Nonce": 1089558378
@@ -262,9 +262,9 @@ module EU =
       "CompletedDateTime":"2025-02-10T12:49:55.6Z",
       "ClearingChannel":"Target2",
       "DebitCreditCode":"Credit",
-      "Amount":1000.0,
+      "Amount":1000.25,
       "Currency":"EUR",
-      "RemittanceInformation":"75030e66dc7844ed9e4a1266c9e8410f",
+      "RemittanceInformation":"75030e66dc7844ed9e4a1266c9e8410fstring",
       "DebtorAccount":{
          "AccountId":null,
          "Iban":"NL17CLRB0126793871",
@@ -284,12 +284,12 @@ module EU =
    "Version":1,
    "Payload":{
       "TransactionId":"a94a49f7-9007-419a-8722-bc45b0ddc7ec",
-      "EndToEndIdentification":"46189668732340195406845",
+      "EndToEndIdentification":"46189668732340195406845string",
       "CreatedDateTime":"2025-02-20T10:44:06.7833333Z",
       "CompletedDateTime":"2025-02-20T10:44:09.7633333Z",
       "ClearingChannel":"Target2",
       "DebitCreditCode":"Debit",
-      "Amount":424.0,
+      "Amount":424.5,
       "Currency":"EUR",
       "RemittanceInformation":"Example Remittance",
       "DebtorAccount":{
@@ -316,7 +316,7 @@ module EU =
       "CompletedDateTime":"2025-02-10T12:54:58.0966667Z",
       "ClearingChannel":"SEPA",
       "DebitCreditCode":"Credit",
-      "Amount":1000.0,
+      "Amount":1000.25,
       "Currency":"EUR",
       "RemittanceInformation":"Funding",
       "DebtorAccount":{
@@ -339,12 +339,12 @@ module EU =
    "Version":1,
    "Payload":{
       "TransactionId":"2a259909-e2b5-4bb5-ba91-5e40070ce901",
-      "EndToEndIdentification":"4751967232218871296240",
+      "EndToEndIdentification":"4751967232218871296240string",
       "CreatedDateTime":"2024-07-29T09:56:59.58Z",
       "CompletedDateTime":"2024-07-29T10:00:23.82Z",
       "ClearingChannel":"SEPA",
       "DebitCreditCode":"Debit",
-      "Amount":224.0,
+      "Amount":224.75,
       "Currency":"EUR",
       "RemittanceInformation":"deposit",
       "DebtorAccount":{
@@ -371,7 +371,7 @@ module EU =
       "CompletedDateTime":"2025-02-10T15:54:14.29Z",
       "ClearingChannel":"SEPA-Instant",
       "DebitCreditCode":"Debit",
-      "Amount":100.0,
+      "Amount":100.1,
       "Currency":"EUR",
       "RemittanceInformation":"testing instant",
       "DebtorAccount":{
@@ -459,7 +459,7 @@ module EU =
   "Payload": {
     "RecallTransactionId": "fcb6963b5e9d4b3b943b1551bdc9b398",
     "OriginalTransactionId": "2e4880ab-21a3-43d1-95a1-b6c5426cd6e4",
-    "TotalReturnedAmount": 100,
+    "TotalReturnedAmount": 100.25,
     "TimestampCreated": "2025-01-22T12:54:39.9844016Z",
     "PaymentId": "c7c4402a-56a6-4382-a31a-0ca32099ca4f",
     "EndToEndId": "8ufIvXRF6gDpWcFnLl4GruLZLQsAGCzFa4F"

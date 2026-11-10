@@ -85,6 +85,13 @@ let doSomeTransactions =
 
 ```
 
+`Ok` means ClearBank received the batch (202), not that every payment in it was accepted: read each item of the response's
+`Transactions`, whose `Response` is `Accepted` or the reason that payment was rejected. What happens after that arrives as webhooks.
+
+Payment amounts are sent with two decimals. An amount that two decimals don't hold (`10.999m`, or one too large for a `float`
+to carry its pence) is an `Error` and nothing is sent: round it to what you mean to pay first. The noise of `float` arithmetic
+is not a third decimal: `0.1 + 0.2` is sent as `0.30`.
+
 If you have problems with the KeyVault authentication, you can change the AzureKeyVaultCredentials in the config
 
 ```fsharp
@@ -136,7 +143,9 @@ For a server, create one `ClearBankClient` for the application's lifetime and us
 (`ClearBank.UK.Api`, `ClearBank.UK.MultiCurrency.Api`, `ClearBank.EU.Api`). They return `Task<Result<'T, exn * string>>`,
 take a `CancellationToken`, and share the caller's `HttpClient`. Set `AllowAutoRedirect = false` on your own client's
 handler, as `ClearBankClient.createHttpClient` does: following a redirect would send signatures and payment bodies to
-whatever host it points at.
+whatever host it points at. The library cannot stop a handler that follows one; it reports the call as an `Error` with a
+`ClearBankRedirectException` (the URI sent and the URI that answered), and whether the payment was made is then unknown.
+A handler that rewrites the request URI itself is reported the same way.
 
 ```fsharp
 open System
@@ -206,6 +215,12 @@ then e.g. `await UK.Api.getAccountsAsync(client, FSharpValueOption<int>.None, FS
 `ClearBank.UK.MultiCurrency.Api` also has `cancelPaymentsAsync`, and `ClearBank.EU.Api` covers the SEPA and Target2 calls.
 Each `requestId` becomes the `X-Request-Id` header: use a new one per request and keep it with your record of the request.
 
+The `getEvery...` functions read from page 1 until an empty page. A failed page, a page without its list or a page equal to
+the one before it makes the whole read an `Error`, so a result is never a partial list.
+
+A batch id, end-to-end id or sort code that goes into a request path is escaped as one path segment; an empty, `.` or `..`
+value is an `Error` and nothing is sent.
+
 Not covered yet: FPS returns and single payments, statements, embedded banking (customers, KYC, ISAs, savings) and multi-currency virtual accounts.
 
 The schemas in `Schemas/` are copies of ClearBank's [published endpoints](https://github.com/clearbank/clearbank.github.io/tree/main/data/endpoints).
@@ -252,6 +267,8 @@ type CBWebhookController() as this =
             //    | ClearBank.Webhooks.UkWebhook.Unlisted other -> ...
             //    | _ -> (* FITestEvent *) ...
             // The string constants in ClearBank.Webhooks.WebhookTypes still work with parsed.Type.
+            // In parsed.Payload, amounts are decimal option; references, end-to-end ids, ServiceUserNumber and
+            // TransactionCode are the text sent (string option), so leading zeros and letters are kept.
 
             // 3. Create response (or Webhooks.createSignedResponseAsync signer this.Request parsed.Nonce ct with any RequestSigner)
             return! ClearBank.Webhooks.createResponse clearbankDefaultConfig azureKeyVaultCertificateName this.Request parsed.Nonce

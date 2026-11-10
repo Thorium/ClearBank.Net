@@ -303,6 +303,72 @@ type ``Client Tests`` () =
         }
 
     [<TestMethod>]
+    member _.``reading every page fails on a page without its list`` () : Task =
+        task {
+            let mutable asked = 0
+
+            use handler =
+                new FakeClearBank(fun _ _ ->
+                    asked <- asked + 1
+
+                    match asked with
+                    | 1 -> HttpStatusCode.OK, """{"transactions":[{"transactionId":"a","status":"Settled"}],"halLinks":[]}"""
+                    | _ -> HttpStatusCode.OK, """{"halLinks":[]}""")
+
+            match! Api.getEveryTransactionAsync (clientWith handler) (ValueSome 1) ValueNone ValueNone ct with
+            | Ok read -> Assert.Fail $"expected an error, read {read.Length} transactions"
+            | Error(err, _) -> StringAssert.Contains(err.Message, "no list")
+
+            equal(2, handler.Calls.Length)
+
+            use empty = new FakeClearBank(fun _ _ -> HttpStatusCode.OK, "{}")
+            let! accounts = Api.getEveryAccountAsync (clientWith empty) ValueNone ct
+            let! transactions = Api.getEveryAccountTransactionAsync (clientWith empty) (AccountRef.Real(Guid.NewGuid())) ValueNone ValueNone ValueNone ct
+            Assert.IsTrue(accounts.IsError)
+            Assert.IsTrue(transactions.IsError)
+        }
+
+    [<TestMethod>]
+    member _.``reading every page fails on a null body instead of throwing`` () : Task =
+        task {
+            use handler = new FakeClearBank(fun _ _ -> HttpStatusCode.OK, "null")
+            let client = clientWith handler
+            let! accounts = Api.getEveryAccountAsync client ValueNone ct
+            let! transactions = Api.getEveryTransactionAsync client ValueNone ValueNone ValueNone ct
+            let! accountTransactions = Api.getEveryAccountTransactionAsync client (AccountRef.Real(Guid.NewGuid())) ValueNone ValueNone ValueNone ct
+            Assert.IsTrue(accounts.IsError)
+            Assert.IsTrue(transactions.IsError)
+            Assert.IsTrue(accountTransactions.IsError)
+        }
+
+    [<TestMethod>]
+    member _.``reading every page fails when the server repeats a page`` () : Task =
+        task {
+            let page =
+                """{"transactions":[{"transactionId":"a","status":"Settled","amount":{"instructedAmount":10.5,"currency":"GBP"},"transactionTime":"2026-10-01T10:00:00Z"}],"halLinks":[]}"""
+
+            use handler = new FakeClearBank(fun _ _ -> HttpStatusCode.OK, page)
+
+            match! Api.getEveryTransactionAsync (clientWith handler) (ValueSome 1) ValueNone ValueNone ct with
+            | Ok read -> Assert.Fail $"expected an error, read {read.Length} transactions"
+            | Error(err, _) -> StringAssert.Contains(err.Message, "repeats")
+
+            equal(2, handler.Calls.Length)
+
+            let mutable asked = 0
+
+            use moving =
+                new FakeClearBank(fun _ _ ->
+                    asked <- asked + 1
+
+                    if asked > 3 then HttpStatusCode.OK, """{"transactions":[],"halLinks":[]}"""
+                    else HttpStatusCode.OK, page.Replace("\"a\"", $"\"t{asked}\""))
+
+            let! all = Api.getEveryTransactionAsync (clientWith moving) (ValueSome 1) ValueNone ValueNone ct
+            CollectionAssert.AreEqual([| "t1"; "t2"; "t3" |], expectOk all |> Array.map _.TransactionId)
+        }
+
+    [<TestMethod>]
     member _.``virtual account transactions use the virtual path`` () : Task =
         task {
             use handler = new FakeClearBank(fun _ _ -> HttpStatusCode.OK, """{"transactions":[],"halLinks":[]}""")
@@ -534,6 +600,89 @@ type ``Client Tests`` () =
         }
 
     [<TestMethod>]
+    member _.``a multi-currency cancellation keeps each id in its own path segment`` () : Task =
+        task {
+            use handler = new FakeClearBank(fun _ _ -> HttpStatusCode.OK, "{}")
+            let client = clientWith handler
+            let! one = UK.MultiCurrency.Api.cancelPaymentsAsync client (Guid.NewGuid()) "BATCH/1" (ValueSome "INV/2026#7?x=1 a") ct
+            let! batch = UK.MultiCurrency.Api.cancelPaymentsAsync client (Guid.NewGuid()) "BATCH-1" ValueNone ct
+            expectOk one
+            expectOk batch
+
+            CollectionAssert.AreEqual(
+                [| "/v1/mccy/payments/BATCH%2F1/INV%2F2026%237%3Fx%3D1%20a"; "/v1/mccy/payments/BATCH-1" |],
+                handler.Calls |> List.map _.PathAndQuery |> List.toArray)
+
+            Assert.IsTrue(handler.Calls |> List.forall (fun call -> call.Method = "DELETE"))
+        }
+
+    [<TestMethod>]
+    member _.``a cancellation with an empty or dot id is an Error and sends nothing`` () : Task =
+        task {
+            use handler = new FakeClearBank(fun _ _ -> HttpStatusCode.OK, "{}")
+            let client = clientWith handler
+
+            for batchId, endToEndId in
+                [ "BATCH-1", ValueSome ""
+                  "BATCH-1", ValueSome "."
+                  "BATCH-1", ValueSome ".."
+                  "", ValueNone
+                  "..", ValueNone
+                  null, ValueSome "INV-1" ] do
+                match! UK.MultiCurrency.Api.cancelPaymentsAsync client (Guid.NewGuid()) batchId endToEndId ct with
+                | Ok() -> Assert.Fail $"expected an error for {batchId} / {endToEndId}"
+                | Error(err, _) -> Assert.IsInstanceOfType(err, typeof<ArgumentException>)
+
+            equal(0, handler.Calls.Length)
+        }
+
+    [<TestMethod>]
+    member _.``a Bacs list keeps the sort code in its path segment, and refuses an empty one`` () : Task =
+        task {
+            use handler = new FakeClearBank(fun _ _ -> HttpStatusCode.OK, "{}")
+            let client = clientWith handler
+            let! unpaid = Api.getUnpaidDirectDebitsAsync client "04-06-05/../../v3/Accounts?x=" BacsItemQuery.empty ValueNone ValueNone ct
+            let! unapplied = Api.getUnappliedDirectCreditsAsync client "04 06 05" BacsItemQuery.empty ValueNone ValueNone ct
+            expectOk unpaid |> ignore
+            expectOk unapplied |> ignore
+
+            CollectionAssert.AreEqual(
+                [| "/v1/Transactions/040605%2F..%2F..%2Fv3%2FAccounts%3Fx%3D/DirectDebit/Unpaid"
+                   "/v1/Transactions/04%2006%2005/DirectCredit/Unapplied" |],
+                handler.Calls |> List.map _.PathAndQuery |> List.toArray)
+
+            let! empty = Api.getUnpaidDirectDebitsAsync client "" BacsItemQuery.empty ValueNone ValueNone ct
+            let! dots = Api.getUnappliedDirectCreditsAsync client ".." BacsItemQuery.empty ValueNone ValueNone ct
+            Assert.IsTrue(empty.IsError)
+            Assert.IsTrue(dots.IsError)
+            equal(2, handler.Calls.Length)
+        }
+
+    [<TestMethod>]
+    member _.``a Bacs filter amount uses a decimal point whatever the current culture`` () : Task =
+        task {
+            let original = Globalization.CultureInfo.CurrentCulture
+            Globalization.CultureInfo.CurrentCulture <- Globalization.CultureInfo "fi-FI"
+
+            try
+                use handler = new FakeClearBank(fun _ _ -> HttpStatusCode.OK, "{}")
+                let client = clientWith handler
+                let query = { BacsItemQuery.empty with Amount = ValueSome 17.95m }
+                let! unpaid = Api.getUnpaidDirectDebitsAsync client "04-06-05" query ValueNone ValueNone ct
+                let! unapplied = Api.getUnappliedDirectCreditsAsync client "04-06-05" query ValueNone ValueNone ct
+                expectOk unpaid |> ignore
+                expectOk unapplied |> ignore
+
+                CollectionAssert.AreEqual(
+                    [| "/v1/Transactions/040605/DirectDebit/Unpaid?amount=17.95"; "/v1/Transactions/040605/DirectCredit/Unapplied?amount=17.95" |],
+                    handler.Calls |> List.map _.PathAndQuery |> List.toArray)
+
+                equal("fi-FI", Globalization.CultureInfo.CurrentCulture.Name)
+            finally
+                Globalization.CultureInfo.CurrentCulture <- original
+        }
+
+    [<TestMethod>]
     member _.``Faster Payments post the signed batch with two-decimal amounts`` () : Task =
         task {
             use handler = new FakeClearBank(fun _ _ -> HttpStatusCode.Accepted, """{"transactions":[],"halLinks":[]}""")
@@ -620,6 +769,118 @@ type ``Client Tests`` () =
                 Globalization.CultureInfo.CurrentCulture <- original
         }
 
+    [<TestMethod>]
+    member _.``a Faster Payment amount that two decimals do not hold is an Error and sends nothing`` () : Task =
+        task {
+            use handler = new FakeClearBank(fun _ _ -> HttpStatusCode.Accepted, """{"transactions":[],"halLinks":[]}""")
+            let client = clientWith handler
+
+            let pay (sum: decimal) =
+                let transfer =
+                    createCreditTransfer
+                        { To = UK_Domestic("20-20-15", "55555555"); AccountHolder = "Mr Test"; Sum = sum; Currency = "GBP"
+                          Description = "Phone Bill"; PaymentReference = "123456789"; TransactionId = "e2e-12345" }
+
+                Api.transferPaymentsAsync client (Guid.NewGuid()) [| createPaymentInstruction "Address" None "Batch123" (UK_Domestic("04-06-05", "00000001")) [| transfer |] |] ct
+
+            for sum in [ 10.999m; 1.005m; 0.004m; 0.0000000000000000000000000001m; 90071992547409.93m; 9007199254740993m ] do
+                match! pay sum with
+                | Ok _ -> Assert.Fail $"expected an error for {sum}"
+                | Error(err, _) ->
+                    Assert.IsInstanceOfType(err, typeof<ArgumentException>)
+                    StringAssert.Contains(err.Message, "not sent")
+
+            equal(0, handler.Calls.Length)
+
+            for sum, sent in [ 0.01m, "0.01"; 0.29m, "0.29"; 12.5m, "12.50"; 1234567.8900m, "1234567.89"; 99999999999.99m, "99999999999.99" ] do
+                let! paid = pay sum
+                expectOk paid |> ignore
+                StringAssert.Contains((handler.Calls |> List.last).Body, $"\"instructedAmount\":{sent}}}")
+        }
+
+    [<TestMethod>]
+    member _.``CHAPS and multi-currency amounts that two decimals do not hold are Errors and send nothing`` () : Task =
+        task {
+            use handler = new FakeClearBank(fun _ _ -> HttpStatusCode.Created, """{"paymentId":"55555555-5555-5555-5555-555555555555","transactions":[]}""")
+            let client = clientWith handler
+            let address = ChapsV6.PartyAddressDetailsDtoV6("London", "GB", "EC3A 8EP", None, None, None)
+            let party name = ChapsV6.CustomerPartyDetailsDtoV6(name, address, ChapsV6.OrganisationIdentifierV6(Some "CLRBGB22", None, None), null)
+
+            let chaps (amount: float) =
+                ChapsV6.CreateCustomerPaymentDtoV6(
+                    "instr-1", "e2e-1", ChapsV6.InterBankSettlementAmountDtoV6(amount, "GBP"),
+                    chapsAccount (IBAN "GB33CLRB04066812345678"), chapsAccount (IBAN "GB33CLRB04066812345678"), party "A",
+                    chapsAccount (IBAN "GB33CLRB04066887654321"), party "B",
+                    ChapsV6.PurposeCodeV6.Loan, ChapsV6.CategoryPurposeCodeV6.Loan, ChapsV6.StructuredRemittanceInformationDtoV6(None))
+
+            let creditor =
+                UK.MultiCurrency.MccyPaymentsV1.Creditor(
+                    "John", UK.MultiCurrency.MccyPaymentsV1.Creditor_Address("Street 1", "Street 2", "77000", "FI", None), Some "NDEAFIHH", null, None, null,
+                    Some "FI2112345600000785", None, UK.MultiCurrency.MccyPaymentsV1.Creditor_SchemeName(None, Some "IBAN"))
+
+            let item (amount: float) =
+                UK.MultiCurrency.MccyPaymentsV1.PaymentRequestItem(
+                    "e2e", "ref", amount, creditor, "Jim Doe",
+                    UK.MultiCurrency.MccyPaymentsV1.PaymentRequestItem_DebtorAddress("Street 1", "Street 2", "77000", "GB", None),
+                    UK.MultiCurrency.MccyPaymentsV1.AccountIdentifier(UK.MultiCurrency.MccyPaymentsV1.AccountIdentifierKind.Iban, "GB33CLRB04066812345678"),
+                    "EUR", None, null, null, null, None, null, null, null)
+
+            let! chapsResult = Api.chapsCustomerPaymentAsync client (Guid.NewGuid()) (chaps 1234567.891) ct
+            let! third = UK.MultiCurrency.Api.transferPaymentsAsync client (Guid.NewGuid()) None "EUR" [| item 123.; item 0.305 |] ct
+            let! tiny = UK.MultiCurrency.Api.transferPaymentsAsync client (Guid.NewGuid()) None "EUR" [| item 1e-28 |] ct
+            let! notANumber = UK.MultiCurrency.Api.transferPaymentsAsync client (Guid.NewGuid()) None "EUR" [| item nan |] ct
+            Assert.IsTrue(chapsResult.IsError)
+            Assert.IsTrue(third.IsError)
+            Assert.IsTrue(tiny.IsError)
+            Assert.IsTrue(notANumber.IsError)
+            equal(0, handler.Calls.Length)
+
+            // The noise of float arithmetic is not a third decimal
+            let! summed = UK.MultiCurrency.Api.transferPaymentsAsync client (Guid.NewGuid()) None "EUR" [| item (0.1 + 0.2) |] ct
+            expectOk summed |> ignore
+            StringAssert.Contains((handler.Calls |> List.exactlyOne).Body, "\"amount\":0.30,")
+        }
+
+    [<TestMethod>]
+    member _.``a minimum balance is sent as the decimal given`` () : Task =
+        task {
+            use handler = new FakeClearBank(fun _ _ -> HttpStatusCode.NoContent, "")
+            let client = clientWith handler
+
+            for balance, sent in [ -100.10m, "-100.1"; 0.29m, "0.29"; 1234.56m, "1234.56"; -2500m, "-2500"; 0m, "0" ] do
+                let! result = Api.updateAccountAsync client (Guid.NewGuid()) (Guid.NewGuid()) { AccountUpdate.empty with MinimumBalance = ValueSome balance } ct
+                expectOk result
+                let call = handler.Calls |> List.last
+                equal($"{{\"minimumBalance\":{sent}}}", call.Body)
+                Assert.IsTrue(verifies call)
+
+            let sentSoFar = handler.Calls.Length
+            let! tooPrecise = Api.updateAccountAsync client (Guid.NewGuid()) (Guid.NewGuid()) { AccountUpdate.empty with MinimumBalance = ValueSome -1234567890123456.78m } ct
+            Assert.IsTrue(tooPrecise.IsError)
+            equal(sentSoFar, handler.Calls.Length)
+        }
+
+    [<TestMethod>]
+    member _.``an accepted Faster Payments batch carries each payment's own response`` () : Task =
+        task {
+            let answer =
+                """{"transactions":[{"endToEndIdentification":"e2e-1","response":"Accepted"},{"endToEndIdentification":"e2e-2","response":"InsufficientFunds"}],"halLinks":[]}"""
+
+            use handler = new FakeClearBank(fun _ _ -> HttpStatusCode.Accepted, answer)
+
+            let transfer endToEndId =
+                createCreditTransfer
+                    { To = UK_Domestic("20-20-15", "55555555"); AccountHolder = "Mr Test"; Sum = 12.5m; Currency = "GBP"
+                      Description = "Phone Bill"; PaymentReference = "123456789"; TransactionId = endToEndId }
+
+            let instruction = createPaymentInstruction "Address" None "Batch123" (UK_Domestic("04-06-05", "00000001")) [| transfer "e2e-1"; transfer "e2e-2" |]
+            let! result = Api.transferPaymentsAsync (clientWith handler) (Guid.NewGuid()) [| instruction |] ct
+
+            CollectionAssert.AreEqual(
+                [| "e2e-1", "Accepted"; "e2e-2", "InsufficientFunds" |],
+                (expectOk result).Transactions |> Array.map (fun item -> string item.EndToEndIdentification, string item.Response))
+        }
+
 [<TestClass>]
 type ``Webhook Type Tests`` () =
 
@@ -645,6 +906,89 @@ type ``Webhook Type Tests`` () =
         equal(Webhooks.EuWebhook.SepaInstantRecallPaymentSettled, Webhooks.EuWebhook.parse name)
         equal(name, Webhooks.EuWebhook.name Webhooks.EuWebhook.SepaInstantRecallPaymentSettled)
         equal(Webhooks.EuWebhook.Unlisted "Something.New", Webhooks.EuWebhook.parse "Something.New")
+
+    [<TestMethod>]
+    member _.``EU webhook amounts are decimals with their cents`` () =
+        let completed (amount: string) =
+            Webhooks.parsePaymentsCallEU
+                $$"""{"Type":"CustomerAccounts.TransactionCompleted","Version":1,"Payload":{"TransactionId":"70e7d2ff-bbb2-4f1f-90f0-f2221029447a","EndToEndIdentification":"0012345","DebitCreditCode":"Credit","Amount":{{amount}},"Currency":"EUR"},"Nonce":944609635}"""
+
+        let amounts: decimal option list = [ "1000.10"; "0.99"; "1000.0"; "1000"; "2147483648.05" ] |> List.map (fun amount -> (completed amount).Payload.Amount)
+        equal([ Some 1000.10m; Some 0.99m; Some 1000m; Some 1000m; Some 2147483648.05m ], amounts)
+
+        let recall =
+            Webhooks.parsePaymentsCallEU
+                """{"Type":"Sepa.Instant.RecallPayment.Settled","Version":2,"Payload":{"TotalReturnedAmount":-12,"EndToEndId":"0012345"},"Nonce":445427771}"""
+
+        let returned: decimal option = recall.Payload.TotalReturnedAmount
+        equal(Some -12m, returned)
+        equal(Some "0012345", recall.Payload.EndToEndId)
+
+        let settled =
+            Webhooks.parsePaymentsCallEU """{"Type":"Sepa.Instant.Inbound.Payment.Settled","Version":1,"Payload":{"InstructedAmount":3},"Nonce":1225137631}"""
+
+        let instructed: decimal option = settled.Payload.InstructedAmount
+        equal(Some 3m, instructed)
+
+    [<TestMethod>]
+    member _.``UK webhook references and Bacs codes are read as the text sent`` () =
+        let settled (transactionCode: string) (serviceUserNumber: string) =
+            Webhooks.parsePaymentsCallUK
+                $$"""{"Type":"TransactionSettled","Version":6,"Payload":{"Amount":10,"EndToEndTransactionId":"000123456789","Reference":"0012345","TransactionCode":"{{transactionCode}}","ServiceUserNumber":"{{serviceUserNumber}}"},"Nonce":1}"""
+
+        let read = settled "01" "030201"
+        let code: string option = read.Payload.TransactionCode
+        let user: string option = read.Payload.ServiceUserNumber
+        let amount: decimal option = read.Payload.Amount
+        equal(Some "01", code)
+        equal(Some "030201", user)
+        equal(Some 10m, amount)
+        equal(Some "000123456789", read.Payload.EndToEndTransactionId)
+        let reference: string option = read.Payload.Reference
+        equal(Some "0012345", reference)
+        equal(Some "0N", (settled "0N" "A12345").Payload.TransactionCode)
+        equal(Some "A12345", (settled "0N" "A12345").Payload.ServiceUserNumber)
+
+        let held =
+            Webhooks.parsePaymentsCallUK
+                """{"Type":"InboundHeldTransaction","Version":1,"Payload":{"Scheme":"FasterPayments","TransactionAmount":88,"PaymentReference":"12345678","EndToEndTransactionId":"0012"},"Nonce":1082937278}"""
+
+        let paymentReference: string option = held.Payload.PaymentReference
+        let transactionAmount: decimal option = held.Payload.TransactionAmount
+        equal(Some "12345678", paymentReference)
+        equal(Some 88m, transactionAmount)
+        equal(Some "0012", held.Payload.EndToEndTransactionId)
+
+        let failed =
+            Webhooks.parsePaymentsCallUK
+                """{"Type":"PaymentMessageValidationFailed","Version":1,"Payload":{"MessageId":"164ac6a0-8e15-4592-b99e-c0a7399f1295","ValidationFailure":[{"EndToEndId":"0012345","Reasons":["Creditor name contains invalid characters"]}],"AccountIdentification":{"Debtor":{"IBAN":"GB00CUBK22002243218765","BBAN":"CUBK22002243218765"},"Creditors":[{"Reference":"INV-2026-001","Amount":17,"CurrencyCode":"GBP","BBAN":"CUBK44556687654321"},{"Reference":"0012345","Amount":0.5,"CurrencyCode":"GBP","BBAN":"CUBK44556687654321"}]}},"Nonce":1634549462}"""
+
+        let creditors = failed.Payload.AccountIdentification.Value.Creditors
+        let references: string array = creditors |> Array.map _.Reference
+        let amounts: decimal array = creditors |> Array.map _.Amount
+        CollectionAssert.AreEqual([| "INV-2026-001"; "0012345" |], references)
+        CollectionAssert.AreEqual([| 17m; 0.5m |], amounts)
+        equal("0012345", failed.Payload.ValidationFailure[0].EndToEndId)
+
+        let rejected =
+            Webhooks.parsePaymentsCallUK
+                """{"Type":"TransactionRejected","Version":2,"Payload":{"Reference":"06a87c63c88c84b99294d910e283cae6","SupplementaryData":[{"Name":"20","Value":"0042"}]},"Nonce":748392098}"""
+
+        let names: string array = rejected.Payload.SupplementaryData |> Array.map _.Name
+        equal(Some "06a87c63c88c84b99294d910e283cae6", rejected.Payload.Reference)
+        CollectionAssert.AreEqual([| "20" |], names)
+        equal("0042", rejected.Payload.SupplementaryData[0].Value)
+
+    [<TestMethod>]
+    member _.``EU webhook end-to-end ids and remittance information are read as the text sent`` () =
+        let completed =
+            Webhooks.parsePaymentsCallEU
+                """{"Type":"CustomerAccounts.TransactionCompleted","Version":1,"Payload":{"EndToEndIdentification":"0046189668732340195406845","Amount":424.01,"RemittanceInformation":"75030e66dc7844ed9e4a1266c9e8410f"},"Nonce":1269251375}"""
+
+        let endToEnd: string option = completed.Payload.EndToEndIdentification
+        let remittance: string option = completed.Payload.RemittanceInformation
+        equal(Some "0046189668732340195406845", endToEnd)
+        equal(Some "75030e66dc7844ed9e4a1266c9e8410f", remittance)
 
 /// Printing a configuration or a client doesn't show the API token.
 [<TestClass>]

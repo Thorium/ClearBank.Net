@@ -230,13 +230,108 @@ let rec internal getErrorDetails : Exception -> string = function
     | _ ->
         ""
 
+/// The error of a number that the text sent would not hold exactly. It is raised while the body is serialized,
+/// before anything is signed or sent.
+let internal amountNotExact (value: float) (form: string) : exn =
+    let text = value.ToString("R", Globalization.CultureInfo.InvariantCulture)
+    ArgumentException $"The amount {text} is not exact {form}, so the request was not sent. Round it to what you mean to pay first."
+
+/// Writes an amount with two decimals. An amount that two decimals don't hold (more decimals, or too large for a
+/// double to carry its pence) is refused instead of rounded. The noise of float arithmetic is not more decimals:
+/// 0.1 + 0.2 is 0.30. The text has to be within a millionth of a unit and a billionth of the amount.
 type internal TwoDecimalsConverter() =
     inherit System.Text.Json.Serialization.JsonConverter<float>()
 
     override _.Write(writer: System.Text.Json.Utf8JsonWriter, value, serializer) =
-        writer.WriteRawValue(value.ToString("0.00", Globalization.CultureInfo.InvariantCulture))
+        let text = value.ToString("0.00", Globalization.CultureInfo.InvariantCulture)
+
+        match Double.TryParse(text, Globalization.NumberStyles.Float, Globalization.CultureInfo.InvariantCulture) with
+        | true, sent when abs (sent - value) <= 1e-6 && abs (sent - value) <= abs value * 1e-9 -> writer.WriteRawValue text
+        | _ -> raise (amountNotExact value "in two decimals")
 
     override _.Read(reader, typeToConvert, options) = reader.GetDouble()
+
+/// Writes a number as the decimal it stands for (-100.1), on every runtime: a double's own round-trip digits
+/// differ between runtimes (-100.09999999999999). A number that a decimal doesn't hold exactly is refused.
+type internal DecimalTextConverter() =
+    inherit System.Text.Json.Serialization.JsonConverter<float>()
+
+    override _.Write(writer: System.Text.Json.Utf8JsonWriter, value, serializer) =
+        let exact =
+            try ValueSome(decimal value)
+            with :? OverflowException -> ValueNone
+
+        match exact with
+        | ValueSome number when float number = value -> writer.WriteRawValue(number.ToString Globalization.CultureInfo.InvariantCulture)
+        | _ -> raise (amountNotExact value "as a decimal")
+
+    override _.Read(reader, typeToConvert, options) = reader.GetDouble()
+
+/// A caller's text as one path segment: escaped, so that "/", "?" and "#" stay part of it. An empty, "." or ".."
+/// segment would address another resource, so it is refused.
+let internal pathSegment (name: string) (value: string) =
+    match value with
+    | null
+    | ""
+    | "."
+    | ".." -> invalidArg name $"'{value}' cannot be part of a request path, so the request was not sent."
+    | text -> Uri.EscapeDataString text
+
+/// A call's HttpClient followed a redirect: the request, with its body and signature, may have been sent to
+/// the Answered host, and the answer read is not the API's. Whether a payment was made is unknown.
+[<Sealed>]
+type ClearBankRedirectException(sent: Uri, answered: Uri) =
+    inherit HttpRequestException(
+        $"The HttpClient followed a redirect from {sent} to {answered}: the request, with its body and signature, may have been sent there, "
+        + "and the answer is not the API's. Set AllowAutoRedirect = false on the client's handler.")
+
+    member _.Sent = sent
+    member _.Answered = answered
+
+/// Sends through the HttpClient and fails with ClearBankRedirectException when the answer belongs to another
+/// URI than the request's, which is how a handler that follows redirects shows.
+let internal sendChecked (http: HttpClient) (request: HttpRequestMessage) (cancellationToken: CancellationToken) =
+    task {
+        let sent =
+            match request.RequestUri with
+            | null -> http.BaseAddress
+            | uri when uri.IsAbsoluteUri || isNull http.BaseAddress -> uri
+            | uri -> Uri(http.BaseAddress, uri)
+
+        let! response = http.SendAsync(request, cancellationToken)
+
+        match response.RequestMessage with
+        | null -> return response
+        | answered when isNull answered.RequestUri || answered.RequestUri = sent -> return response
+        | answered ->
+            let target = answered.RequestUri
+            response.Dispose()
+            return raise (ClearBankRedirectException(sent, target))
+    }
+
+/// The handler of an HttpClient that never sends by itself.
+[<Sealed>]
+type internal UnusedHandler() =
+    inherit HttpMessageHandler()
+
+    override _.SendAsync(_, _) =
+        Task.FromException<HttpResponseMessage>(InvalidOperationException "This handler sends nothing.")
+
+/// The HttpClient given to the generated clients: it sends through the caller's client with sendChecked.
+[<Sealed>]
+type internal RedirectCheckingClient(inner: HttpClient) =
+    inherit HttpClient(new UnusedHandler(), true)
+
+    override _.SendAsync(request: HttpRequestMessage, cancellationToken: CancellationToken) : Task<HttpResponseMessage> =
+        sendChecked inner request cancellationToken
+
+module internal RedirectCheckingClient =
+
+    let private clients = Runtime.CompilerServices.ConditionalWeakTable<HttpClient, RedirectCheckingClient>()
+
+    /// One checking client per HttpClient, for as long as that client lives.
+    let over (http: HttpClient) =
+        clients.GetValue(http, fun inner -> new RedirectCheckingClient(inner))
 
 /// Reports every non-success response to a callback.
 type internal LoggingHandler(inner: HttpMessageHandler, log: HttpStatusCode * string -> unit) =
@@ -262,12 +357,18 @@ type ClearBankClient =
       Signer: RequestSigner }
 
     member internal this.Authorization = "Bearer " + this.ApiToken
+
+    /// Http for the generated clients: an answer that a followed redirect brought is an error.
+    member internal this.CheckedHttp: HttpClient = RedirectCheckingClient.over this.Http
+
     member this.Display = "{ ApiToken hidden }"
     override this.ToString() = this.Display
 
 module ClearBankClient =
 
-    /// A client over a caller-owned HttpClient whose BaseAddress is the ClearBank API root.
+    /// A client over a caller-owned HttpClient whose BaseAddress is the ClearBank API root. Set AllowAutoRedirect = false on
+    /// its handler: a call whose client followed a redirect is an Error (ClearBankRedirectException), but by then the
+    /// request has been sent to the redirect's host.
     let create (http: HttpClient) (apiToken: string) (signer: RequestSigner) =
         if isNull http.BaseAddress then
             invalidArg (nameof http) "The HttpClient needs a BaseAddress, e.g. https://institution-api-sim.clearbank.co.uk/"
@@ -340,7 +441,7 @@ let internal sendJson (client: ClearBankClient) (httpMethod: HttpMethod) (path: 
             request.Content <- new StringContent(json, Text.Encoding.UTF8, "application/json")
         | ValueNone -> ()
 
-        use! response = client.Http.SendAsync(request, cancellationToken) |> Async.AwaitTask
+        use! response = sendChecked client.Http request cancellationToken |> Async.AwaitTask
         let! content = response.Content.ReadAsStringAsync() |> Async.AwaitTask
 
         return

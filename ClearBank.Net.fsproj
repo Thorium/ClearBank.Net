@@ -5,8 +5,18 @@
     <TargetFrameworks>netstandard2.0;netstandard2.1;net8.0;net10.0</TargetFrameworks>
     <PackageId>ClearBank.Net</PackageId>
     <AssemblyName>ClearBank.Net</AssemblyName>
-    <Version>1.2.0</Version>
-    <PackageReleaseNotes>v1.2.0:
+    <Version>1.3.0</Version>
+    <PackageReleaseNotes>v1.3.0:
+- BREAKING: UK webhook Payload.Reference, PaymentReference, TransactionCode and ServiceUserNumber are string option; Creditors[].Reference and SupplementaryData[].Name are string
+- BREAKING: EU webhook Payload.Amount is decimal option; EndToEndIdentification and RemittanceInformation are string option
+- FIXED: a call whose HttpClient followed a redirect is an Error (ClearBankRedirectException), not the redirect target's answer read as success
+- FIXED: getEveryAccountAsync, getEveryTransactionAsync and getEveryAccountTransactionAsync return an Error for a page without its list, a null body or a repeated page
+- FIXED: multi-currency cancelPaymentsAsync and the Bacs lists escape batch id, end-to-end id and sort code as path segments; an empty, "." or ".." value is an Error and nothing is sent
+- FIXED: an account's minimum balance is sent as the decimal given on every target (.NET Framework sent -100.09999999999999 for -100.10)
+- FIXED: the Bacs filter amount was formatted with the current culture
+- CHANGED: a payment amount that two decimals don't hold (10.999, or too large for its pence) is an Error and nothing is sent; it was rounded (FPS, CHAPS, multi-currency, SEPA, Target2)
+- ADDED: ClearBankRedirectException with the URI sent and the URI that answered
+v1.2.0:
 - FIXED: the token reaches the HTTP call of every UK v1 and v2 operation, so cancelling stops it
 - FIXED: cancelling a configuration-based call ends Canceled with OperationCanceledException, not Faulted; a timeout stays an Error
 - FIXED: printing ClearbankConfiguration or ClearBankClient (%A, ToString) hides the API token
