@@ -90,7 +90,8 @@ let doSomeTransactions =
 
 Payment amounts are sent with two decimals. An amount that two decimals don't hold (`10.999m`, or one too large for a `float`
 to carry its pence) is an `Error` and nothing is sent: round it to what you mean to pay first. The noise of `float` arithmetic
-is not a third decimal: `0.1 + 0.2` is sent as `0.30`.
+is not a third decimal: `0.1 + 0.2` is sent as `0.30` and `10000000.01 - 10000000.0` as `0.01`. Only zero is sent as `0.00`.
+A Target2 exchange rate is not an amount: it is sent with the decimals it has (`0.8571`).
 
 If you have problems with the KeyVault authentication, you can change the AzureKeyVaultCredentials in the config
 
@@ -219,7 +220,7 @@ The `getEvery...` functions read from page 1 until an empty page. A failed page,
 the one before it makes the whole read an `Error`, so a result is never a partial list.
 
 A batch id, end-to-end id or sort code that goes into a request path is escaped as one path segment; an empty, `.` or `..`
-value is an `Error` and nothing is sent.
+value is an `Error` and nothing is sent. A value that is already percent-escaped (`INV%2F1`) is not escaped again.
 
 Not covered yet: FPS returns and single payments, statements, embedded banking (customers, KYC, ISAs, savings) and multi-currency virtual accounts.
 

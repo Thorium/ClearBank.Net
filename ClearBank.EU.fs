@@ -17,6 +17,7 @@ type T2V1 = OpenApiClientProvider<t2V1, PreferAsync=true>
 
 /// Task-based SEPA and Target2 operations over a shared ClearBankClient. Failures are Error (exception, response body).
 /// Amounts are sent with two decimals; one that two decimals don't hold exactly is an Error and nothing is sent.
+/// A Target2 exchange rate is not an amount: it is sent with the decimals it has.
 module Api =
 
     let private paymentOptions =
@@ -26,7 +27,20 @@ module Api =
 
     let private sepa (client: ClearBankClient) = SepaV1.Client(client.CheckedHttp, paymentOptions)
     let private sepaInstant (client: ClearBankClient) = SepaInstantV1.Client(client.CheckedHttp, paymentOptions)
-    let private t2 (client: ClearBankClient) = T2V1.Client(client.CheckedHttp, paymentOptions)
+    /// paymentOptions, with the exchange rate written by RateConverter instead of as an amount.
+    let private t2Options =
+        let resolver = Serialization.Metadata.DefaultJsonTypeInfoResolver()
+
+        resolver.Modifiers.Add(fun info ->
+            for property in info.Properties do
+                if property.Name = "exchangeRate" && property.PropertyType = typeof<float option> then
+                    property.CustomConverter <- RateConverter())
+
+        let options = JsonSerializerOptions(TypeInfoResolver = resolver)
+        options.Converters.Add(TwoDecimalsConverter())
+        options
+
+    let private t2 (client: ClearBankClient) = T2V1.Client(client.CheckedHttp, t2Options)
 
     /// Posts a SEPA payment created with SepaV1.CreateSepaOutboundPaymentRequest(...)
     let sepaTransferPaymentsAsync (client: ClearBankClient) (requestId: Guid) sepaOutboundPaymentRequest cancellationToken =

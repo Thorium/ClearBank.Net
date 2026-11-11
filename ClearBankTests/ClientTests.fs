@@ -606,11 +606,15 @@ type ``Client Tests`` () =
             let client = clientWith handler
             let! one = UK.MultiCurrency.Api.cancelPaymentsAsync client (Guid.NewGuid()) "BATCH/1" (ValueSome "INV/2026#7?x=1 a") ct
             let! batch = UK.MultiCurrency.Api.cancelPaymentsAsync client (Guid.NewGuid()) "BATCH-1" ValueNone ct
+            let! escaped = UK.MultiCurrency.Api.cancelPaymentsAsync client (Guid.NewGuid()) "BATCH%2F1" (ValueSome "INV%2F2026 a+b 50%off") ct
             expectOk one
             expectOk batch
+            expectOk escaped
 
             CollectionAssert.AreEqual(
-                [| "/v1/mccy/payments/BATCH%2F1/INV%2F2026%237%3Fx%3D1%20a"; "/v1/mccy/payments/BATCH-1" |],
+                [| "/v1/mccy/payments/BATCH%2F1/INV%2F2026%237%3Fx%3D1%20a"
+                   "/v1/mccy/payments/BATCH-1"
+                   "/v1/mccy/payments/BATCH%2F1/INV%2F2026%20a%2Bb%2050%25off" |],
                 handler.Calls |> List.map _.PathAndQuery |> List.toArray)
 
             Assert.IsTrue(handler.Calls |> List.forall (fun call -> call.Method = "DELETE"))
@@ -626,6 +630,8 @@ type ``Client Tests`` () =
                 [ "BATCH-1", ValueSome ""
                   "BATCH-1", ValueSome "."
                   "BATCH-1", ValueSome ".."
+                  "BATCH-1", ValueSome "%2E%2E"
+                  "%2e", ValueNone
                   "", ValueNone
                   "..", ValueNone
                   null, ValueSome "INV-1" ] do
@@ -839,6 +845,55 @@ type ``Client Tests`` () =
             let! summed = UK.MultiCurrency.Api.transferPaymentsAsync client (Guid.NewGuid()) None "EUR" [| item (0.1 + 0.2) |] ct
             expectOk summed |> ignore
             StringAssert.Contains((handler.Calls |> List.exactlyOne).Body, "\"amount\":0.30,")
+
+            for amount, sent in [ 10000000.01 - 10000000.0, "0.01"; 1e8 + 0.07 - 1e8, "0.07"; 4503599627.37 - 4503599627.0, "0.37" ] do
+                let! paid = UK.MultiCurrency.Api.transferPaymentsAsync client (Guid.NewGuid()) None "EUR" [| item amount |] ct
+                expectOk paid |> ignore
+                StringAssert.Contains((handler.Calls |> List.last).Body, $"\"amount\":{sent},")
+
+            // Only zero is sent as 0.00
+            let sentSoFar = handler.Calls.Length
+            let! almostZero = UK.MultiCurrency.Api.transferPaymentsAsync client (Guid.NewGuid()) None "EUR" [| item (0.1 + 0.2 - 0.3) |] ct
+            let! belowZero = UK.MultiCurrency.Api.transferPaymentsAsync client (Guid.NewGuid()) None "EUR" [| item -1e-9 |] ct
+            Assert.IsTrue(almostZero.IsError)
+            Assert.IsTrue(belowZero.IsError)
+            equal(sentSoFar, handler.Calls.Length)
+        }
+
+    [<TestMethod>]
+    member _.``a Target2 exchange rate keeps its decimals, and the amounts beside it have two`` () : Task =
+        task {
+            use handler = new FakeClearBank(fun _ _ -> HttpStatusCode.Created, "{}")
+            let client = clientWith handler
+
+            let pay (rate: float option) (amount: float) =
+                let request = EU.T2V1.CustomerPayments.CustomerPaymentRequest()
+                request.ExchangeRate <- rate
+                request.InterbankSettlementAmount <- EU.T2V1.CustomerPayments.CurrencyAmount(amount, "EUR")
+                request.InstructedAmount <- EU.T2V1.CustomerPayments.CurrencyAmount(85.71, "GBP")
+                EU.Api.target2CustomerPaymentAsync client (Guid.NewGuid()) request ct
+
+            for rate, sent in [ 1.0, "1"; 0.86, "0.86"; 0.8571, "0.8571"; 1.08453, "1.08453"; 0.1 + 0.2, "0.3"; 100.0 / 117.0, "0.854700854700855" ] do
+                let! paid = pay (Some rate) 100.5
+                expectOk paid |> ignore
+                let call = handler.Calls |> List.last
+                StringAssert.Contains(call.Body, $"\"exchangeRate\":{sent},")
+                StringAssert.Contains(call.Body, "\"amount\":100.50,")
+                StringAssert.Contains(call.Body, "\"amount\":85.71,")
+                Assert.IsTrue(verifies call)
+
+            let! noRate = pay None 100.0
+            expectOk noRate |> ignore
+            StringAssert.Contains((handler.Calls |> List.last).Body, "\"exchangeRate\":null,")
+
+            let sentSoFar = handler.Calls.Length
+            let! thirdDecimal = pay (Some 0.8571) 100.505
+            let! notANumber = pay (Some nan) 100.0
+            let! infinite = pay (Some infinity) 100.0
+            Assert.IsTrue(thirdDecimal.IsError)
+            Assert.IsTrue(notANumber.IsError)
+            Assert.IsTrue(infinite.IsError)
+            equal(sentSoFar, handler.Calls.Length)
         }
 
     [<TestMethod>]

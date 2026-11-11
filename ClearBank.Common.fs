@@ -238,7 +238,8 @@ let internal amountNotExact (value: float) (form: string) : exn =
 
 /// Writes an amount with two decimals. An amount that two decimals don't hold (more decimals, or too large for a
 /// double to carry its pence) is refused instead of rounded. The noise of float arithmetic is not more decimals:
-/// 0.1 + 0.2 is 0.30. The text has to be within a millionth of a unit and a billionth of the amount.
+/// 0.1 + 0.2 is 0.30, and 10000000.01 - 10000000.0 is 0.01. The text has to be within a millionth of a unit, and only
+/// zero is sent as 0.00.
 type internal TwoDecimalsConverter() =
     inherit System.Text.Json.Serialization.JsonConverter<float>()
 
@@ -246,7 +247,7 @@ type internal TwoDecimalsConverter() =
         let text = value.ToString("0.00", Globalization.CultureInfo.InvariantCulture)
 
         match Double.TryParse(text, Globalization.NumberStyles.Float, Globalization.CultureInfo.InvariantCulture) with
-        | true, sent when abs (sent - value) <= 1e-6 && abs (sent - value) <= abs value * 1e-9 -> writer.WriteRawValue text
+        | true, sent when abs (sent - value) <= 1e-6 && (sent <> 0.0 || value = 0.0) -> writer.WriteRawValue text
         | _ -> raise (amountNotExact value "in two decimals")
 
     override _.Read(reader, typeToConvert, options) = reader.GetDouble()
@@ -267,10 +268,32 @@ type internal DecimalTextConverter() =
 
     override _.Read(reader, typeToConvert, options) = reader.GetDouble()
 
-/// A caller's text as one path segment: escaped, so that "/", "?" and "#" stay part of it. An empty, "." or ".."
-/// segment would address another resource, so it is refused.
+/// Writes an optional number that is not an amount (an exchange rate) as the decimal it stands for, to 15
+/// significant digits, on every runtime. Two decimals would change it.
+type internal RateConverter() =
+    inherit System.Text.Json.Serialization.JsonConverter<float option>()
+
+    override _.Write(writer: System.Text.Json.Utf8JsonWriter, value, serializer) =
+        match value with
+        | None -> writer.WriteNullValue()
+        | Some rate ->
+            let number =
+                try ValueSome(decimal rate)
+                with :? OverflowException -> ValueNone
+
+            match number with
+            | ValueSome number -> writer.WriteRawValue(number.ToString Globalization.CultureInfo.InvariantCulture)
+            | ValueNone ->
+                let text = rate.ToString("R", Globalization.CultureInfo.InvariantCulture)
+                raise (ArgumentException $"The rate {text} is not a number that can be sent, so the request was not sent.")
+
+    override _.Read(reader, typeToConvert, options) = Some(reader.GetDouble())
+
+/// A caller's text as one path segment: escaped, so that "/", "?" and "#" stay part of it. Text that is already
+/// percent-escaped ("a%2Fb") is the same segment as its plain form ("a/b"), not escaped again. An empty, "." or
+/// ".." segment would address another resource, so it is refused.
 let internal pathSegment (name: string) (value: string) =
-    match value with
+    match (if isNull value then null else Uri.UnescapeDataString value) with
     | null
     | ""
     | "."
